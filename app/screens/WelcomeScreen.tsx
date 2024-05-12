@@ -1,83 +1,51 @@
+import { Button, Screen, Toggle } from "app/components"
+import { useStores } from "app/models"
+import { spacing } from "app/theme"
 import { observer } from "mobx-react-lite"
 import React, { FC } from "react"
-import { Image, ImageStyle, TextStyle, View, ViewStyle } from "react-native"
-import {
-  Text,
-} from "app/components"
-import { isRTL } from "../i18n"
+import { ViewStyle } from "react-native"
 import { AppStackScreenProps } from "../navigators"
-import { colors, spacing } from "../theme"
-import { useSafeAreaInsetsStyle } from "../utils/useSafeAreaInsetsStyle"
-
-const welcomeLogo = require("../../assets/images/logo.png")
-const welcomeFace = require("../../assets/images/welcome-face.png")
 
 interface WelcomeScreenProps extends AppStackScreenProps<"Welcome"> {}
 
-export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeScreen(
-) {
+export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeScreen() {
+  const rootStore = useStores()
 
-  const $bottomContainerInsets = useSafeAreaInsetsStyle(["bottom"])
+  // 1. Load habits ✅
+  // 2. Display habits with a checkbox to save the date in the dates array ✅
+  // 3. Store the results in async storage or mmkv (whatever is better for the use case) ✅
+  // 4. Load the app and the previously modified habits are there ✅
+
+  const createHabit = () => {
+    rootStore.addHabit({
+      name: "Test",
+      dates: [],
+      streak: 0,
+    })
+  }
 
   return (
-    <View style={$container}>
-      <View style={$topContainer}>
-        <Image style={$welcomeLogo} source={welcomeLogo} resizeMode="contain" />
-        <Text
-          testID="welcome-heading"
-          style={$welcomeHeading}
-          tx="welcomeScreen.readyForLaunch"
-          preset="heading"
+    <Screen preset="fixed" safeAreaEdges={["top"]} style={$screenStyle}>
+      {rootStore.habits.map(({ name, isTodayChecked, toggle }, index) => (
+        <Toggle
+          label={name}
+          key={index}
+          containerStyle={$toggleContainer}
+          value={isTodayChecked}
+          onValueChange={toggle}
         />
-        <Text tx="welcomeScreen.exciting" preset="subheading" />
-        <Image style={$welcomeFace} source={welcomeFace} resizeMode="contain" />
-      </View>
-
-      <View style={[$bottomContainer, $bottomContainerInsets]}>
-        <Text tx="welcomeScreen.postscript" size="md" />
-      </View>
-    </View>
+      ))}
+      <Button preset="default" onPress={createHabit}>
+        Create a new habit
+      </Button>
+    </Screen>
   )
 })
 
-const $container: ViewStyle = {
-  flex: 1,
-  backgroundColor: colors.background,
+const $screenStyle: ViewStyle = {
+  paddingHorizontal: spacing.md,
 }
 
-const $topContainer: ViewStyle = {
-  flexShrink: 1,
-  flexGrow: 1,
-  flexBasis: "57%",
-  justifyContent: "center",
-  paddingHorizontal: spacing.lg,
-}
-
-const $bottomContainer: ViewStyle = {
-  flexShrink: 1,
-  flexGrow: 0,
-  flexBasis: "43%",
-  backgroundColor: colors.palette.neutral100,
-  borderTopLeftRadius: 16,
-  borderTopRightRadius: 16,
-  paddingHorizontal: spacing.lg,
-  justifyContent: "space-around",
-}
-const $welcomeLogo: ImageStyle = {
-  height: 88,
-  width: "100%",
-  marginBottom: spacing.xxl,
-}
-
-const $welcomeFace: ImageStyle = {
-  height: 169,
-  width: 269,
-  position: "absolute",
-  bottom: -47,
-  right: -80,
-  transform: [{ scaleX: isRTL ? -1 : 1 }],
-}
-
-const $welcomeHeading: TextStyle = {
+const $toggleContainer: ViewStyle = {
   marginBottom: spacing.md,
 }

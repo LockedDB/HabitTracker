@@ -1,10 +1,21 @@
 import { Instance, SnapshotOut, types } from "mobx-state-tree"
+import { HabitModel, HabitSnapshotIn } from "./Habit"
 
 /**
  * A RootStore model.
  */
-export const RootStoreModel = types.model("RootStore").props({
-})
+export const RootStoreModel = types
+  .model("RootStore")
+  .props({
+    habits: types.array(HabitModel),
+  })
+  .views((self) => ({})) // eslint-disable-line @typescript-eslint/no-unused-vars
+  .actions((self) => ({
+    addHabit(habit: HabitSnapshotIn) {
+      const newHabit = HabitModel.create(habit)
+      self.habits.push(newHabit)
+    },
+  }))
 
 /**
  * The RootStore instance.
