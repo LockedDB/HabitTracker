@@ -8,31 +8,23 @@ import { AppStackScreenProps } from "../navigators"
 
 interface WelcomeScreenProps extends AppStackScreenProps<"Welcome"> {}
 
-export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeScreen() {
+export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeScreen(_props) {
+  const { navigation } = _props
   const rootStore = useStores()
 
-  // 1. Load habits ✅
-  // 2. Display habits with a checkbox to save the date in the dates array ✅
-  // 3. Store the results in async storage or mmkv (whatever is better for the use case) ✅
-  // 4. Load the app and the previously modified habits are there ✅
-
   const createHabit = () => {
-    rootStore.addHabit({
-      name: "Test",
-      dates: [],
-      streak: 0,
-    })
+    navigation.navigate("HabitCreation")
   }
 
   return (
     <Screen preset="fixed" safeAreaEdges={["top"]} style={$screenStyle}>
-      {rootStore.habits.map(({ name, isTodayChecked, toggle }, index) => (
+      {rootStore.habits.map((habit, index) => (
         <Toggle
-          label={name}
+          label={habit.name}
           key={index}
           containerStyle={$toggleContainer}
-          value={isTodayChecked}
-          onValueChange={toggle}
+          value={habit.isTodayChecked}
+          onValueChange={habit.toggle}
         />
       ))}
       <Button preset="default" onPress={createHabit}>
