@@ -1,4 +1,4 @@
-import { Screen } from "app/components"
+import { Backdrop, Screen } from "app/components"
 import { AppStackScreenProps } from "app/navigators"
 import { colors } from "app/theme"
 import { observer } from "mobx-react-lite"
@@ -17,23 +17,27 @@ import Animated, {
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
 
 const rectangles = [
-  { id: "1", color: colors.separator },
+  { id: "1", color: colors.error },
   { id: "2", color: colors.border },
-  { id: "3", color: colors.error },
+  { id: "3", color: colors.separator },
 ]
+
+const COMPLETE_HABIT_TIME = 3000
+const HABIT_CANCELED_TIME = 500
 
 /**
  * 1. Manage to stop the scroll at the right points ✅
  * 2. Animation of scaling left and right rectangles ✅
  * 3. Infinite scroll one way ✅
  * 4. Pressing the card makes it scale down slowly ✅
- * 5. At the same time, the card shakes every second a bit more
- * 6. Add slowly a dark backdrop to the card
+ * 5. Add slowly a dark backdrop to the card ✅
+ * 6. At the same time, the card shakes every second a bit more
  */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const scrollX = useSharedValue(0)
   const scrollViewRef = useRef<FlatList>(null)
   const currentIndex = useSharedValue(0)
+  const pressing = useSharedValue(false)
 
   const { width: screenWidth } = useWindowDimensions()
 
@@ -62,12 +66,12 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   }, [data])
 
   return (
-    <Screen
-      style={$root}
-      contentContainerStyle={$container}
-      preset="fixed"
-      safeAreaEdges={["top", "bottom"]}
-    >
+    <Screen style={$root} contentContainerStyle={$container} preset="fixed">
+      <Backdrop
+        visible={pressing}
+        enterAnimationConfig={{ duration: COMPLETE_HABIT_TIME }}
+        exitAnimationConfig={{ duration: HABIT_CANCELED_TIME }}
+      />
       <Animated.FlatList
         ref={scrollViewRef}
         data={data}
@@ -79,6 +83,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
             item={item}
             index={index}
             scrollX={scrollX}
+            pressing={pressing}
           />
         )}
         keyExtractor={(item) => item.id}
@@ -98,18 +103,18 @@ type ItemProps = {
   index: number
   scrollX: SharedValue<number>
   listCurrentIndex: SharedValue<number>
+  pressing: SharedValue<boolean>
 }
 
 function Item(props: ItemProps) {
-  const { item, index, scrollX, listCurrentIndex } = props
-  const pressing = useSharedValue(false)
+  const { item, index, scrollX, listCurrentIndex, pressing } = props
 
   const { width: screenWidth } = useWindowDimensions()
 
   const scaleDown = useDerivedValue(() =>
     pressing.value && index === listCurrentIndex.value
       ? // TODO: Add withDecay to slow down at the end
-        withTiming(0.7, { duration: 3000 })
+        withTiming(0.7, { duration: COMPLETE_HABIT_TIME })
       : withTiming(1, { duration: 500 }),
   )
 
@@ -132,7 +137,8 @@ function Item(props: ItemProps) {
   const togglePressing = () => {
     pressing.value = !pressing.value
   }
-  const $combinedAnimation = useAnimatedStyle(() => {
+
+  const $rRectangle = useAnimatedStyle(() => {
     const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
     const outputRange = [0.5, 1, 0.5]
 
@@ -145,7 +151,7 @@ function Item(props: ItemProps) {
 
   return (
     <Pressable style={$rectangleContainer} onPressIn={togglePressing} onPressOut={togglePressing}>
-      <Animated.View style={[$rectangle, $combinedAnimation, { backgroundColor: item.color }]} />
+      <Animated.View style={[$rectangle, $rRectangle, { backgroundColor: item.color }]} />
     </Pressable>
   )
 }
