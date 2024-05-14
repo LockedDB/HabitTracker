@@ -33,7 +33,8 @@ const rectangles = [
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const scrollX = useSharedValue(0)
   const scrollViewRef = useRef<FlatList>(null)
-  const currentIndex = useRef(0)
+  const currentIndex = useSharedValue(0)
+
   const { width: screenWidth } = useWindowDimensions()
 
   const [data, setData] = React.useState(rectangles)
@@ -41,9 +42,13 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x
-      if (event.contentOffset.x > currentIndex.current * screenWidth) {
-        currentIndex.current += 1
-      }
+    },
+    onMomentumEnd: (event) => {
+      // Calculate the current index being displayed
+      const { contentOffset } = event
+      const index = Math.round(contentOffset.x / screenWidth)
+
+      currentIndex.value = index
     },
   })
 
@@ -70,7 +75,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         onEndReachedThreshold={0.5}
         renderItem={({ item, index }) => (
           <MemoizedItem
-            listCurrentIndex={currentIndex.current}
+            listCurrentIndex={currentIndex}
             item={item}
             index={index}
             scrollX={scrollX}
@@ -92,7 +97,7 @@ type ItemProps = {
   item: { id: string; color: string }
   index: number
   scrollX: SharedValue<number>
-  listCurrentIndex: number
+  listCurrentIndex: SharedValue<number>
 }
 
 function Item(props: ItemProps) {
@@ -102,7 +107,7 @@ function Item(props: ItemProps) {
   const { width: screenWidth } = useWindowDimensions()
 
   const scaleDown = useDerivedValue(() =>
-    pressing.value && index === listCurrentIndex
+    pressing.value && index === listCurrentIndex.value
       ? // TODO: Add withDecay to slow down at the end
         withTiming(0.7, { duration: 3000 })
       : withTiming(1, { duration: 500 }),
@@ -127,27 +132,20 @@ function Item(props: ItemProps) {
   const togglePressing = () => {
     pressing.value = !pressing.value
   }
-
-  const $pressingAnimation = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scaleDown.value }],
-    }
-  })
-
-  const animatedStyle = useAnimatedStyle(() => {
+  const $combinedAnimation = useAnimatedStyle(() => {
     const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
     const outputRange = [0.5, 1, 0.5]
 
+    const scale = scaleDown.value * interpolate(scrollX.value, inputRange, outputRange)
+
     return {
-      transform: [{ scale: interpolate(scrollX.value, inputRange, outputRange) }],
+      transform: [{ scale }],
     }
   })
 
   return (
     <Pressable style={$rectangleContainer} onPressIn={togglePressing} onPressOut={togglePressing}>
-      <Animated.View
-        style={[$rectangle, $pressingAnimation, animatedStyle, { backgroundColor: item.color }]}
-      />
+      <Animated.View style={[$rectangle, $combinedAnimation, { backgroundColor: item.color }]} />
     </Pressable>
   )
 }
