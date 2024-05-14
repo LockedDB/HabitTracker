@@ -29,9 +29,10 @@ const HABIT_CANCELED_TIME = 500
  * 1. Manage to stop the scroll at the right points ✅
  * 2. Animation of scaling left and right rectangles ✅
  * 3. Infinite scroll one way ✅
- * 4. Pressing the card makes it scale down slowly ✅
+ * 4. Pressing the card makes it scale up slowly ✅
  * 5. Add slowly a dark backdrop to the card ✅
  * 6. At the same time, the card shakes every second a bit more
+ * 7. Add pagination dots (could be mini versions of the cards in the future)
  */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const scrollX = useSharedValue(0)
@@ -78,7 +79,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
         renderItem={({ item, index }) => (
-          <MemoizedItem
+          <MemoizedCard
             listCurrentIndex={currentIndex}
             item={item}
             index={index}
@@ -106,16 +107,16 @@ type ItemProps = {
   pressing: SharedValue<boolean>
 }
 
-function Item(props: ItemProps) {
+function Card(props: ItemProps) {
   const { item, index, scrollX, listCurrentIndex, pressing } = props
 
   const { width: screenWidth } = useWindowDimensions()
 
-  const scaleDown = useDerivedValue(() =>
+  const scaleUp = useDerivedValue(() =>
     pressing.value && index === listCurrentIndex.value
       ? // TODO: Add withDecay to slow down at the end
-        withTiming(0.7, { duration: COMPLETE_HABIT_TIME })
-      : withTiming(1, { duration: 500 }),
+        withTiming(1, { duration: COMPLETE_HABIT_TIME })
+      : withTiming(0.9, { duration: 500 }),
   )
 
   const $rectangleContainer: ViewStyle = {
@@ -125,7 +126,7 @@ function Item(props: ItemProps) {
   }
 
   const $rectangle: ViewStyle = {
-    width: screenWidth / 1.5,
+    width: screenWidth / 1.2,
     aspectRatio: 1 / 1.5,
     borderRadius: 4,
     shadowColor: colors.palette.neutral800,
@@ -140,13 +141,11 @@ function Item(props: ItemProps) {
 
   const $rRectangle = useAnimatedStyle(() => {
     const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
-    const outputRange = [0.5, 1, 0.5]
+    const outputRange = [0.5, 0.9, 0.5]
 
-    const scale = scaleDown.value * interpolate(scrollX.value, inputRange, outputRange)
+    const scale = scaleUp.value * interpolate(scrollX.value, inputRange, outputRange)
 
-    return {
-      transform: [{ scale }],
-    }
+    return { transform: [{ scale }] }
   })
 
   return (
@@ -156,7 +155,7 @@ function Item(props: ItemProps) {
   )
 }
 
-const MemoizedItem = React.memo(Item)
+const MemoizedCard = React.memo(Card)
 
 const $root: ViewStyle = {
   flex: 1,
