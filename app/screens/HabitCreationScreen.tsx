@@ -31,39 +31,41 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
     }, [habit])
 
     return (
-      <>
-        <Screen
-          style={$root}
-          contentContainerStyle={$content}
-          preset="fixed"
-          safeAreaEdges={["bottom"]}
-        >
-          <View />
-          <View style={$fieldsContainer}>
-            <TextField
-              value={habit}
-              placeholder="put on my gym clothes"
-              label="I will..."
-              onChangeText={(value) => setHabit(value)}
-            />
-            <TextField
-              value={when}
-              placeholder="every morning at 7am"
-              label="When..."
-              onChangeText={(value) => setWhen(value)}
-            />
-            <TextField
-              value={identity}
-              label="So that I can become"
-              placeholder="a healthier person"
-              onChangeText={(value) => setIdentity(value)}
-            />
-          </View>
-          <Button disabled={!habit} preset={!habit ? "filled" : "reversed"} onPress={createHabit}>
-            New habit
-          </Button>
-        </Screen>
-      </>
+      <Screen
+        style={$root}
+        contentContainerStyle={$content}
+        preset="fixed"
+        keyboardOffset={120}
+        safeAreaEdges={["bottom"]}
+      >
+        <View />
+        <View style={$fieldsContainer}>
+          <TextField
+            value={habit}
+            placeholder="put on my gym clothes"
+            label="I will..."
+            autoCapitalize="none"
+            onChangeText={(value) => setHabit(value)}
+          />
+          <TextField
+            value={when}
+            placeholder="every morning at 7am"
+            label="When..."
+            autoCapitalize="none"
+            onChangeText={(value) => setWhen(value)}
+          />
+          <TextField
+            value={identity}
+            label="So that I can become"
+            placeholder="a healthier person"
+            autoCapitalize="none"
+            onChangeText={(value) => setIdentity(value)}
+          />
+        </View>
+        <Button disabled={!habit} preset={!habit ? "filled" : "reversed"} onPress={createHabit}>
+          New habit
+        </Button>
+      </Screen>
     )
   },
 )

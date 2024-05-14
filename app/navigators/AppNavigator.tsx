@@ -31,6 +31,7 @@ export type AppStackParamList = {
   Welcome: undefined
   // 🔥 Your screens go here
   HabitCreation: undefined
+  Home: undefined
   // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
 
@@ -54,6 +55,7 @@ const AppStack = observer(function AppStack() {
       <Stack.Screen name="Welcome" component={Screens.WelcomeScreen} />
       {/** 🔥 Your screens go here */}
       <Stack.Screen name="HabitCreation" component={Screens.HabitCreationScreen} />
+      <Stack.Screen name="Home" component={Screens.HomeScreen} />
       {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}
     </Stack.Navigator>
   )
