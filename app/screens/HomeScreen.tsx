@@ -11,6 +11,7 @@ import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
+  withRepeat,
   withTiming,
 } from "react-native-reanimated"
 
@@ -109,8 +110,22 @@ type ItemProps = {
 
 function Card(props: ItemProps) {
   const { item, index, scrollX, listCurrentIndex, pressing } = props
+  const timeoutRef = useRef<NodeJS.Timeout>()
 
   const { width: screenWidth } = useWindowDimensions()
+
+  // As the card grows, the vibration is more intense
+  const vibrationMultiplier = useDerivedValue(() =>
+    pressing.value && index === listCurrentIndex.value
+      ? withTiming(2.6, { duration: COMPLETE_HABIT_TIME / 2 })
+      : 1,
+  )
+
+  const vibrate = useDerivedValue(() =>
+    pressing.value && index === listCurrentIndex.value
+      ? withRepeat(withTiming(-0.5 * vibrationMultiplier.value, { duration: 50 }), -1, true)
+      : 0,
+  )
 
   const scaleUp = useDerivedValue(() =>
     pressing.value && index === listCurrentIndex.value
@@ -135,8 +150,17 @@ function Card(props: ItemProps) {
     shadowRadius: 4,
   }
 
-  const togglePressing = () => {
-    pressing.value = !pressing.value
+  const onPressOut = () => {
+    pressing.value = false
+    clearTimeout(timeoutRef.current)
+  }
+
+  const onPressIn = () => {
+    pressing.value = true
+
+    timeoutRef.current = setTimeout(() => {
+      console.log("Habit completed!")
+    }, COMPLETE_HABIT_TIME)
   }
 
   const $rRectangle = useAnimatedStyle(() => {
@@ -145,11 +169,11 @@ function Card(props: ItemProps) {
 
     const scale = scaleUp.value * interpolate(scrollX.value, inputRange, outputRange)
 
-    return { transform: [{ scale }] }
+    return { transform: [{ scale }, { translateX: vibrate.value }, { translateY: vibrate.value }] }
   })
 
   return (
-    <Pressable style={$rectangleContainer} onPressIn={togglePressing} onPressOut={togglePressing}>
+    <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
       <Animated.View style={[$rectangle, $rRectangle, { backgroundColor: item.color }]} />
     </Pressable>
   )
