@@ -4,7 +4,14 @@ import { AppStackScreenProps } from "app/navigators"
 import { colors, spacing } from "app/theme"
 import { observer } from "mobx-react-lite"
 import React, { FC, useCallback, useRef, useState } from "react"
-import { FlatList, Pressable, TextStyle, ViewStyle, useWindowDimensions } from "react-native"
+import {
+  FlatList,
+  Pressable,
+  StyleProp,
+  TextStyle,
+  ViewStyle,
+  useWindowDimensions,
+} from "react-native"
 import Animated, {
   Easing,
   SharedValue,
@@ -28,7 +35,7 @@ const HABIT_CANCELED_TIME = 500
  * 3. Infinite scroll one way ✅
  * 4. Pressing the card makes it scale up slowly ✅
  * 5. Add slowly a dark backdrop to the card ✅
- * 6. At the same time, the card shakes every second a bit more
+ * 6. At the same time, the card shakes every second a bit more ✅
  * 7. Add pagination dots (could be mini versions of the cards in the future)
  */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
@@ -64,7 +71,12 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   }, [data])
 
   return (
-    <Screen style={$root} contentContainerStyle={$container} preset="fixed">
+    <Screen
+      style={$root}
+      contentContainerStyle={$container}
+      preset="fixed"
+      backgroundColor={colors.backgroundSecondary}
+    >
       <Backdrop
         visible={pressing}
         enterAnimationConfig={{ duration: COMPLETE_HABIT_TIME }}
@@ -91,6 +103,10 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         windowSize={1}
         showsHorizontalScrollIndicator={false}
       />
+      {/* Pagination
+       * 1. Add the three dots at the bottom of the screen
+       * 7. The habits completed can have a little checkmark on the dot
+       */}
     </Screen>
   )
 })
@@ -122,6 +138,7 @@ function Card(props: CardProps) {
       : 0,
   )
 
+  // Scale up the card when it's being pressed
   const scaleUp = useDerivedValue(() =>
     pressing.value && index === selectedIndex.value
       ? withTiming(1, { duration: COMPLETE_HABIT_TIME, easing: Easing.out(Easing.ease) })
@@ -146,6 +163,9 @@ function Card(props: CardProps) {
     justifyContent: "center",
     padding: spacing.md,
     backgroundColor: colors.palette.accent200,
+    borderColor: colors.border,
+    borderCurve: "continuous",
+    borderWidth: 2,
   }
 
   const onPressOut = () => {
@@ -153,6 +173,8 @@ function Card(props: CardProps) {
     clearTimeout(timeoutRef.current)
   }
 
+  // When the card is pressed, for `COMPLETE_HABIT_TIME`
+  // it will complete the habit
   const onPressIn = () => {
     pressing.value = true
 
@@ -170,9 +192,11 @@ function Card(props: CardProps) {
     return { transform: [{ scale }, { translateX: vibrate.value }, { translateY: vibrate.value }] }
   })
 
+  const $cardStyle: StyleProp<ViewStyle> = [$rRectangle, $rectangle]
+
   return (
     <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View style={[$rectangle, $rRectangle]}>
+      <Animated.View style={$cardStyle}>
         <Text preset="heading" style={$text}>
           {item.name}
         </Text>

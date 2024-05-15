@@ -61,6 +61,10 @@ export const colors = {
    */
   background: palette.neutral100,
   /**
+   *
+   */
+  backgroundSecondary: palette.accent100,
+  /**
    * The default border color.
    */
   border: palette.neutral400,
