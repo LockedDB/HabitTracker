@@ -26,9 +26,9 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
     })
 
     const createHabit = useCallback(() => {
-      rootStore.addHabit({ name: habit })
+      rootStore.addHabit({ name: `I will ${habit} every ${when} so that I can become ${identity}` })
       goBack()
-    }, [habit])
+    }, [habit, when, identity])
 
     return (
       <Screen

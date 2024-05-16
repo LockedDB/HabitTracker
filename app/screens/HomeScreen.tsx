@@ -1,10 +1,12 @@
-import { Backdrop, Screen } from "app/components"
+import { Backdrop, Screen, Text } from "app/components"
+import { Habit, useStores } from "app/models"
 import { AppStackScreenProps } from "app/navigators"
-import { colors } from "app/theme"
+import { colors, spacing } from "app/theme"
 import { observer } from "mobx-react-lite"
-import React, { FC, useCallback, useRef } from "react"
-import { FlatList, Pressable, ViewStyle, useWindowDimensions } from "react-native"
+import React, { FC, useCallback, useRef, useState } from "react"
+import { FlatList, Pressable, TextStyle, ViewStyle, useWindowDimensions } from "react-native"
 import Animated, {
+  Easing,
   SharedValue,
   interpolate,
   useAnimatedScrollHandler,
@@ -16,12 +18,6 @@ import Animated, {
 } from "react-native-reanimated"
 
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
-
-const rectangles = [
-  { id: "1", color: colors.error },
-  { id: "2", color: colors.border },
-  { id: "3", color: colors.separator },
-]
 
 const COMPLETE_HABIT_TIME = 3000
 const HABIT_CANCELED_TIME = 500
@@ -36,6 +32,7 @@ const HABIT_CANCELED_TIME = 500
  * 7. Add pagination dots (could be mini versions of the cards in the future)
  */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
+  const { habits } = useStores()
   const scrollX = useSharedValue(0)
   const scrollViewRef = useRef<FlatList>(null)
   const currentIndex = useSharedValue(0)
@@ -43,7 +40,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
 
   const { width: screenWidth } = useWindowDimensions()
 
-  const [data, setData] = React.useState(rectangles)
+  const [data, setData] = useState<Habit[]>(habits)
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -59,9 +56,8 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   })
 
   const onEndReached = useCallback(() => {
-    const newRectangles = rectangles.map((rectangle, index) => ({
+    const newRectangles = habits.map((rectangle) => ({
       ...rectangle,
-      id: `${data.length + index + 1}`,
     }))
 
     setData([...data, ...newRectangles])
@@ -81,14 +77,13 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         onEndReachedThreshold={0.5}
         renderItem={({ item, index }) => (
           <MemoizedCard
-            listCurrentIndex={currentIndex}
+            selectedIndex={currentIndex}
             item={item}
             index={index}
             scrollX={scrollX}
             pressing={pressing}
           />
         )}
-        keyExtractor={(item) => item.id}
         horizontal
         scrollEventThrottle={16}
         onScroll={scrollHandler}
@@ -100,37 +95,36 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   )
 })
 
-type ItemProps = {
-  item: { id: string; color: string }
+type CardProps = {
+  item: Habit
   index: number
   scrollX: SharedValue<number>
-  listCurrentIndex: SharedValue<number>
   pressing: SharedValue<boolean>
+  selectedIndex: SharedValue<number>
 }
 
-function Card(props: ItemProps) {
-  const { item, index, scrollX, listCurrentIndex, pressing } = props
+function Card(props: CardProps) {
+  const { item, index, scrollX, selectedIndex, pressing } = props
   const timeoutRef = useRef<NodeJS.Timeout>()
 
   const { width: screenWidth } = useWindowDimensions()
 
   // As the card grows, the vibration is more intense
   const vibrationMultiplier = useDerivedValue(() =>
-    pressing.value && index === listCurrentIndex.value
+    pressing.value && index === selectedIndex.value
       ? withTiming(2.6, { duration: COMPLETE_HABIT_TIME / 2 })
       : 1,
   )
 
   const vibrate = useDerivedValue(() =>
-    pressing.value && index === listCurrentIndex.value
+    pressing.value && index === selectedIndex.value
       ? withRepeat(withTiming(-0.5 * vibrationMultiplier.value, { duration: 50 }), -1, true)
       : 0,
   )
 
   const scaleUp = useDerivedValue(() =>
-    pressing.value && index === listCurrentIndex.value
-      ? // TODO: Add withDecay to slow down at the end
-        withTiming(1, { duration: COMPLETE_HABIT_TIME })
+    pressing.value && index === selectedIndex.value
+      ? withTiming(1, { duration: COMPLETE_HABIT_TIME, easing: Easing.out(Easing.ease) })
       : withTiming(0.9, { duration: 500 }),
   )
 
@@ -148,6 +142,10 @@ function Card(props: ItemProps) {
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.md,
+    backgroundColor: colors.palette.accent200,
   }
 
   const onPressOut = () => {
@@ -174,7 +172,11 @@ function Card(props: ItemProps) {
 
   return (
     <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View style={[$rectangle, $rRectangle, { backgroundColor: item.color }]} />
+      <Animated.View style={[$rectangle, $rRectangle]}>
+        <Text preset="heading" style={$text}>
+          {item.name}
+        </Text>
+      </Animated.View>
     </Pressable>
   )
 }
@@ -183,6 +185,11 @@ const MemoizedCard = React.memo(Card)
 
 const $root: ViewStyle = {
   flex: 1,
+}
+
+const $text: TextStyle = {
+  textAlign: "center",
+  color: colors.text,
 }
 
 const $container: ViewStyle = {
