@@ -1,3 +1,4 @@
+import { toJS } from "mobx"
 import { Instance, SnapshotOut, types } from "mobx-state-tree"
 import { HabitModel, HabitSnapshotIn } from "./Habit"
 
@@ -9,7 +10,11 @@ export const RootStoreModel = types
   .props({
     habits: types.array(HabitModel),
   })
-  .views((self) => ({})) // eslint-disable-line @typescript-eslint/no-unused-vars
+  .views((self) => ({
+    get jsHabits() {
+      return toJS(self.habits)
+    },
+  })) // eslint-disable-line @typescript-eslint/no-unused-vars
   .actions((self) => ({
     addHabit(habit: HabitSnapshotIn) {
       const newHabit = HabitModel.create(habit)

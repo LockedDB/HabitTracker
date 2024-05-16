@@ -2,8 +2,10 @@ import { Backdrop, Screen, Text } from "app/components"
 import { Habit, useStores } from "app/models"
 import { AppStackScreenProps } from "app/navigators"
 import { colors, spacing } from "app/theme"
+import { useMountEffect } from "app/utils/useMountEffect"
 import { observer } from "mobx-react-lite"
-import React, { FC, useCallback, useRef, useState } from "react"
+
+import React, { FC, useRef, useState } from "react"
 import {
   FlatList,
   Pressable,
@@ -16,6 +18,7 @@ import Animated, {
   Easing,
   SharedValue,
   interpolate,
+  runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useDerivedValue,
@@ -39,15 +42,20 @@ const HABIT_CANCELED_TIME = 500
  * 7. Add pagination dots (could be mini versions of the cards in the future)
  */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
-  const { habits } = useStores()
+  const habits = useStores().jsHabits
   const scrollX = useSharedValue(0)
-  const scrollViewRef = useRef<FlatList>(null)
+  const listRef = useRef<FlatList>(null)
   const currentIndex = useSharedValue(0)
   const pressing = useSharedValue(false)
 
   const { width: screenWidth } = useWindowDimensions()
 
   const [data, setData] = useState<Habit[]>(habits)
+
+  // Scroll to beggining or end of the list
+  const scrollToOffset = (index: number) => {
+    listRef.current?.scrollToOffset({ offset: index * screenWidth, animated: false })
+  }
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -59,16 +67,25 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
       const index = Math.round(contentOffset.x / screenWidth)
 
       currentIndex.value = index
+
+      // If the index is the first or last, scroll to the opposite end
+      // to create the infinite scroll effect
+      if (habits.length > 1 && (index === 0 || index === habits.length + 1)) {
+        runOnJS(scrollToOffset)(index === 0 ? habits.length : 1)
+      }
     },
   })
 
-  const onEndReached = useCallback(() => {
-    const newRectangles = habits.map((rectangle) => ({
-      ...rectangle,
-    }))
+  useMountEffect(() => {
+    // Create copies of the first and last habits to create the infinite scroll effect
+    // If there's only one habit, don't do anything
+    if (habits.length <= 1) return
 
-    setData([...data, ...newRectangles])
-  }, [data])
+    const firstHabit = habits[0]
+    const lastHabit = habits[habits.length - 1]
+
+    setData([lastHabit, ...habits, firstHabit])
+  })
 
   return (
     <Screen
@@ -83,10 +100,9 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         exitAnimationConfig={{ duration: HABIT_CANCELED_TIME }}
       />
       <Animated.FlatList
-        ref={scrollViewRef}
+        ref={listRef}
         data={data}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.5}
+        contentOffset={{ x: screenWidth, y: 0 }}
         renderItem={({ item, index }) => (
           <MemoizedCard
             selectedIndex={currentIndex}
@@ -100,7 +116,6 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         scrollEventThrottle={16}
         onScroll={scrollHandler}
         pagingEnabled
-        windowSize={1}
         showsHorizontalScrollIndicator={false}
       />
       {/* Pagination
