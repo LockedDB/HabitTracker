@@ -1,3 +1,4 @@
+import { generateUUID } from "app/utils/uuid"
 import { isToday } from "date-fns"
 import { Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree"
 import { withSetPropAction } from "./helpers/withSetPropAction"
@@ -5,6 +6,7 @@ import { withSetPropAction } from "./helpers/withSetPropAction"
 export const HabitModel = types
   .model("Habit")
   .props({
+    id: types.optional(types.identifier, () => generateUUID()),
     name: types.string,
     dates: types.optional(types.array(types.Date), []),
     streak: types.optional(types.number, 0),
@@ -34,6 +36,7 @@ export interface HabitSnapshotOut extends SnapshotOut<typeof HabitModel> {}
 export interface HabitSnapshotIn extends SnapshotIn<typeof HabitModel> {}
 export const createHabitDefaultModel = () =>
   types.optional(HabitModel, {
+    id: "0",
     name: "",
     streak: 0,
     dates: [],

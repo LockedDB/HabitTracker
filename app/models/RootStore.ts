@@ -1,3 +1,4 @@
+import { isUUID } from "app/utils/uuid"
 import { toJS } from "mobx"
 import { Instance, SnapshotOut, types } from "mobx-state-tree"
 import { HabitModel, HabitSnapshotIn } from "./Habit"
@@ -19,6 +20,14 @@ export const RootStoreModel = types
     addHabit(habit: HabitSnapshotIn) {
       const newHabit = HabitModel.create(habit)
       self.habits.push(newHabit)
+    },
+    toggleHabit(id: string) {
+      if (!isUUID(id)) throw new Error("Invalid UUID")
+
+      const habit = self.habits.find((habit) => habit.id === id)
+      if (habit) {
+        habit.toggle()
+      }
     },
   }))
 

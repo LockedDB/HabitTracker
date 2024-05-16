@@ -1,35 +1,22 @@
-import { Backdrop, Screen, Text } from "app/components"
+import { Backdrop, Screen } from "app/components"
 import { Habit, useStores } from "app/models"
 import { AppStackScreenProps } from "app/navigators"
-import { colors, spacing } from "app/theme"
+import { colors } from "app/theme"
 import { useMountEffect } from "app/utils/useMountEffect"
 import { observer } from "mobx-react-lite"
 
 import React, { FC, useRef, useState } from "react"
-import {
-  FlatList,
-  Pressable,
-  StyleProp,
-  TextStyle,
-  ViewStyle,
-  useWindowDimensions,
-} from "react-native"
+import { FlatList, useWindowDimensions } from "react-native"
 import Animated, {
-  Easing,
-  SharedValue,
-  interpolate,
   runOnJS,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
-  withRepeat,
-  withTiming,
 } from "react-native-reanimated"
+import { $container, $root, MemoizedCard } from "./HabitCard"
 
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
 
-const COMPLETE_HABIT_TIME = 3000
+export const COMPLETE_HABIT_TIME = 3000
 const HABIT_CANCELED_TIME = 500
 
 /**
@@ -43,12 +30,12 @@ const HABIT_CANCELED_TIME = 500
  */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const habits = useStores().jsHabits
-  const scrollX = useSharedValue(0)
   const listRef = useRef<FlatList>(null)
-  const currentIndex = useSharedValue(0)
+  const currentIndex = useSharedValue(1)
   const pressing = useSharedValue(false)
-
   const { width: screenWidth } = useWindowDimensions()
+
+  const scrollX = useSharedValue(screenWidth)
 
   const [data, setData] = useState<Habit[]>(habits)
 
@@ -71,7 +58,9 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
       // If the index is the first or last, scroll to the opposite end
       // to create the infinite scroll effect
       if (habits.length > 1 && (index === 0 || index === habits.length + 1)) {
-        runOnJS(scrollToOffset)(index === 0 ? habits.length : 1)
+        const newIndex = index === 0 ? habits.length : 1
+        runOnJS(scrollToOffset)(newIndex)
+        currentIndex.value = newIndex
       }
     },
   })
@@ -81,8 +70,9 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
     // If there's only one habit, don't do anything
     if (habits.length <= 1) return
 
-    const firstHabit = habits[0]
-    const lastHabit = habits[habits.length - 1]
+    // Add a custom id to not conflict with the real ids
+    const firstHabit = { ...habits[0], id: "first" }
+    const lastHabit = { ...habits[habits.length - 1], id: "last" }
 
     setData([lastHabit, ...habits, firstHabit])
   })
@@ -113,6 +103,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
           />
         )}
         horizontal
+        keyExtractor={(item) => item.id}
         scrollEventThrottle={16}
         onScroll={scrollHandler}
         pagingEnabled
@@ -125,115 +116,3 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
     </Screen>
   )
 })
-
-type CardProps = {
-  item: Habit
-  index: number
-  scrollX: SharedValue<number>
-  pressing: SharedValue<boolean>
-  selectedIndex: SharedValue<number>
-}
-
-function Card(props: CardProps) {
-  const { item, index, scrollX, selectedIndex, pressing } = props
-  const timeoutRef = useRef<NodeJS.Timeout>()
-
-  const { width: screenWidth } = useWindowDimensions()
-
-  // As the card grows, the vibration is more intense
-  const vibrationMultiplier = useDerivedValue(() =>
-    pressing.value && index === selectedIndex.value
-      ? withTiming(2.6, { duration: COMPLETE_HABIT_TIME / 2 })
-      : 1,
-  )
-
-  const vibrate = useDerivedValue(() =>
-    pressing.value && index === selectedIndex.value
-      ? withRepeat(withTiming(-0.5 * vibrationMultiplier.value, { duration: 50 }), -1, true)
-      : 0,
-  )
-
-  // Scale up the card when it's being pressed
-  const scaleUp = useDerivedValue(() =>
-    pressing.value && index === selectedIndex.value
-      ? withTiming(1, { duration: COMPLETE_HABIT_TIME, easing: Easing.out(Easing.ease) })
-      : withTiming(0.9, { duration: 500 }),
-  )
-
-  const $rectangleContainer: ViewStyle = {
-    width: screenWidth,
-    alignItems: "center",
-    justifyContent: "center",
-  }
-
-  const $rectangle: ViewStyle = {
-    width: screenWidth / 1.2,
-    aspectRatio: 1 / 1.5,
-    borderRadius: 4,
-    shadowColor: colors.palette.neutral800,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.md,
-    backgroundColor: colors.palette.accent200,
-    borderColor: colors.border,
-    borderCurve: "continuous",
-    borderWidth: 2,
-  }
-
-  const onPressOut = () => {
-    pressing.value = false
-    clearTimeout(timeoutRef.current)
-  }
-
-  // When the card is pressed, for `COMPLETE_HABIT_TIME`
-  // it will complete the habit
-  const onPressIn = () => {
-    pressing.value = true
-
-    timeoutRef.current = setTimeout(() => {
-      console.log("Habit completed!")
-    }, COMPLETE_HABIT_TIME)
-  }
-
-  const $rRectangle = useAnimatedStyle(() => {
-    const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
-    const outputRange = [0.5, 0.9, 0.5]
-
-    const scale = scaleUp.value * interpolate(scrollX.value, inputRange, outputRange)
-
-    return { transform: [{ scale }, { translateX: vibrate.value }, { translateY: vibrate.value }] }
-  })
-
-  const $cardStyle: StyleProp<ViewStyle> = [$rRectangle, $rectangle]
-
-  return (
-    <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View style={$cardStyle}>
-        <Text preset="heading" style={$text}>
-          {item.name}
-        </Text>
-      </Animated.View>
-    </Pressable>
-  )
-}
-
-const MemoizedCard = React.memo(Card)
-
-const $root: ViewStyle = {
-  flex: 1,
-}
-
-const $text: TextStyle = {
-  textAlign: "center",
-  color: colors.text,
-}
-
-const $container: ViewStyle = {
-  flex: 1,
-  justifyContent: "center",
-  flexDirection: "row",
-  alignItems: "center",
-}
