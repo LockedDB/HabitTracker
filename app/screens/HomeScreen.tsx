@@ -140,6 +140,7 @@ function Pagination({ scrollX, habits }: PaginationProps) {
 
 function Dot({ index, scrollX }: { index: number; scrollX: SharedValue<number> }) {
   const { width: screenWidth } = useWindowDimensions()
+
   const $rActive = useAnimatedStyle(() => {
     const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
     const extrapolate = {
@@ -147,7 +148,7 @@ function Dot({ index, scrollX }: { index: number; scrollX: SharedValue<number> }
       extrapolateRight: Extrapolation.CLAMP,
     }
 
-    const translateY = interpolate(scrollX.value, inputRange, [0, -3, 0], extrapolate)
+    const translateY = interpolate(scrollX.value, inputRange, [0, -1, 0], extrapolate)
     const scale = interpolate(scrollX.value, inputRange, [1, 1.1, 1], extrapolate)
     const opacity = interpolate(scrollX.value, inputRange, [0.5, 1, 0.5], extrapolate)
 
@@ -162,7 +163,7 @@ const $paginationContainer: ViewStyle = {
   position: "absolute",
   bottom: spacing.xxxl,
   alignSelf: "center",
-  columnGap: spacing.xxxs,
+  columnGap: spacing.xs,
 }
 
 const $dot: ViewStyle = {
