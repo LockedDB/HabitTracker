@@ -1,22 +1,19 @@
-import { Backdrop, Screen } from "app/components"
+import { Backdrop } from "app/components"
 import { Habit, useStores } from "app/models"
 import { AppStackScreenProps } from "app/navigators"
-import { colors, spacing } from "app/theme"
 import { useMountEffect } from "app/utils/useMountEffect"
 import { observer } from "mobx-react-lite"
 
 import React, { FC, useRef, useState } from "react"
-import { FlatList, View, ViewStyle, useWindowDimensions } from "react-native"
+import { FlatList, ImageBackground, ImageStyle, useWindowDimensions } from "react-native"
 import Animated, {
-  Extrapolation,
-  SharedValue,
-  interpolate,
   runOnJS,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated"
-import { $container, $root, MemoizedCard } from "./HabitCard"
+import { $root, MemoizedCard } from "./HabitCard"
+
+const dumbbell = require("../../assets/images/dumbbells.png")
 
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
 
@@ -82,12 +79,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   })
 
   return (
-    <Screen
-      style={$root}
-      contentContainerStyle={$container}
-      preset="fixed"
-      backgroundColor={colors.backgroundSecondary}
-    >
+    <ImageBackground style={$root} imageStyle={$imageBg} source={dumbbell}>
       <Backdrop
         visible={pressing}
         enterAnimationConfig={{ duration: COMPLETE_HABIT_TIME }}
@@ -113,62 +105,10 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
       />
-      {/* Pagination
-       * 1. Add the three dots at the bottom of the screen
-       * 7. The habits completed can have a little checkmark on the dot
-       */}
-      <Pagination habits={habits} scrollX={scrollX} />
-    </Screen>
+    </ImageBackground>
   )
 })
 
-type PaginationProps = {
-  scrollX: SharedValue<number>
-  habits: Habit[]
-}
-
-function Pagination({ scrollX, habits }: PaginationProps) {
-  return (
-    <View style={$paginationContainer}>
-      {habits.map((_, index) => (
-        /* Take into account that the pagination here, starts with offset 1 */
-        <Dot key={index} index={index + 1} scrollX={scrollX} />
-      ))}
-    </View>
-  )
-}
-
-function Dot({ index, scrollX }: { index: number; scrollX: SharedValue<number> }) {
-  const { width: screenWidth } = useWindowDimensions()
-
-  const $rActive = useAnimatedStyle(() => {
-    const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
-    const extrapolate = {
-      extrapolateLeft: Extrapolation.CLAMP,
-      extrapolateRight: Extrapolation.CLAMP,
-    }
-
-    const translateY = interpolate(scrollX.value, inputRange, [0, -1, 0], extrapolate)
-    const scale = interpolate(scrollX.value, inputRange, [1, 1.1, 1], extrapolate)
-    const opacity = interpolate(scrollX.value, inputRange, [0.5, 1, 0.5], extrapolate)
-
-    return { opacity, transform: [{ translateY }, { scale }] }
-  })
-
-  return <Animated.View style={[$dot, $rActive]} />
-}
-
-const $paginationContainer: ViewStyle = {
-  flexDirection: "row",
-  position: "absolute",
-  bottom: spacing.xxxl,
-  alignSelf: "center",
-  columnGap: spacing.xs,
-}
-
-const $dot: ViewStyle = {
-  width: 8,
-  height: 8,
-  borderRadius: 5,
-  backgroundColor: colors.tint,
+const $imageBg: ImageStyle = {
+  opacity: 0.7,
 }

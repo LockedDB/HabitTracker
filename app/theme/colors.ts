@@ -49,6 +49,10 @@ export const colors = {
    */
   transparent: "rgba(0, 0, 0, 0)",
   /**
+   * Shadow color.
+   */
+  shadow: "rgba(0, 0, 0, 0.15)",
+  /**
    * The default text color in many components.
    */
   text: palette.neutral800,
@@ -67,7 +71,7 @@ export const colors = {
   /**
    * The default border color.
    */
-  border: palette.neutral400,
+  border: palette.neutral100,
   /**
    * The main tinting color.
    */

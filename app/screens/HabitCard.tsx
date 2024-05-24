@@ -1,8 +1,17 @@
-import { Text } from "app/components"
+import { Icon, Text } from "app/components"
 import { Habit, useStores } from "app/models"
 import { colors, spacing } from "app/theme"
 import React, { useRef } from "react"
-import { Pressable, StyleProp, TextStyle, ViewStyle, useWindowDimensions } from "react-native"
+import {
+  ImageBackground,
+  ImageStyle,
+  Pressable,
+  StyleProp,
+  TextStyle,
+  View,
+  ViewStyle,
+  useWindowDimensions,
+} from "react-native"
 import Animated, {
   Easing,
   SharedValue,
@@ -21,6 +30,9 @@ type CardProps = {
   pressing: SharedValue<boolean>
   selectedIndex: SharedValue<number>
 }
+
+const barbell = require("../../assets/images/dumbbells.png")
+
 function HabitCard(props: CardProps) {
   const rootStore = useStores()
   const { item, index, scrollX, selectedIndex, pressing } = props
@@ -57,18 +69,15 @@ function HabitCard(props: CardProps) {
   const $rectangle: ViewStyle = {
     width: screenWidth / 1.2,
     aspectRatio: 1 / 1.5,
-    borderRadius: 4,
-    shadowColor: colors.palette.neutral800,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    borderRadius: 32,
+    shadowColor: colors.shadow,
+    shadowOpacity: 1,
+    shadowOffset: { width: 0, height: 0 },
     shadowRadius: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.md,
-    backgroundColor: colors.palette.accent200,
+    backgroundColor: colors.background,
     borderColor: colors.border,
     borderCurve: "continuous",
-    borderWidth: 2,
+    borderWidth: 4,
   }
 
   const onPressOut = () => {
@@ -112,24 +121,99 @@ function HabitCard(props: CardProps) {
   return (
     <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
       <Animated.View style={$cardStyle}>
-        <Text preset="heading" style={$text}>
-          {item.name}
-        </Text>
+        <ImageBackground style={$barbellImageContainer} source={barbell} imageStyle={$barbellImage}>
+          <View style={$header}>
+            <Text preset="heading" size="xxl">
+              Be Interesting
+            </Text>
+            <Text size="sm">
+              I will read a page every night after getting in bed so that I can become an
+              interesting person.
+            </Text>
+            <View style={$content}>
+              <Text preset="bold" size="md">
+                Streak
+              </Text>
+              <View style={$streakContainer}>
+                {Array.from({ length: 7 }).map((_, index) => (
+                  <View key={index} style={$iconContainer}>
+                    <Icon icon="barbell" color="black" />
+                    <Text size="xs" preset="bold">
+                      {days[index]}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              <Text preset="bold" size="md">
+                Reward
+              </Text>
+              <Text size="sm">I will put 5€ into an account to pay for courses.</Text>
+            </View>
+          </View>
+          <Icon
+            onPress={() => console.log("settings")}
+            icon="settings"
+            size={20}
+            containerStyle={$settingsIcon}
+          />
+          <Text size="xxs" style={$pagination}>
+            {index}/{rootStore.habits.length}
+          </Text>
+        </ImageBackground>
       </Animated.View>
     </Pressable>
   )
 }
+
 export const MemoizedCard = React.memo(HabitCard)
+
+const days = ["M", "T", "W", "T", "F", "S", "S"]
+
 export const $root: ViewStyle = {
-  flex: 1,
-}
-const $text: TextStyle = {
-  textAlign: "center",
-  color: colors.text,
-}
-export const $container: ViewStyle = {
   flex: 1,
   justifyContent: "center",
   flexDirection: "row",
   alignItems: "center",
+}
+
+const $header: ViewStyle = {
+  rowGap: spacing.xs,
+}
+
+const $content: ViewStyle = {
+  rowGap: spacing.xs,
+}
+
+const $streakContainer: ViewStyle = {
+  flexDirection: "row",
+  justifyContent: "space-between",
+}
+
+const $iconContainer: ViewStyle = {
+  alignItems: "center",
+}
+
+const $settingsIcon: ImageStyle = {
+  position: "absolute",
+  top: spacing.md,
+  left: spacing.md,
+  opacity: 0.2,
+}
+
+const $barbellImageContainer: ViewStyle = {
+  flex: 1,
+  justifyContent: "center",
+  padding: spacing.md,
+}
+
+const $barbellImage: ImageStyle = {
+  borderRadius: 32,
+  opacity: 0.05,
+}
+
+const $pagination: TextStyle = {
+  position: "absolute",
+  bottom: spacing.sm,
+  right: spacing.sm,
+  fontFamily: "PoetsenOne-Regular",
 }
