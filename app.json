@@ -64,7 +64,12 @@
           }
         }
       ],
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": ["./assets/fonts/PoetsenOne-Regular.ttf"]
+        }
+      ]
     ],
     "experiments": {
       "tsconfigPaths": true

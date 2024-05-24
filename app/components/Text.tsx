@@ -1,7 +1,7 @@
 import i18n from "i18n-js"
 import React from "react"
-import { StyleProp, Text as RNText, TextProps as RNTextProps, TextStyle } from "react-native"
-import { isRTL, translate, TxKeyPath } from "../i18n"
+import { Text as RNText, TextProps as RNTextProps, StyleProp, TextStyle } from "react-native"
+import { TxKeyPath, isRTL, translate } from "../i18n"
 import { colors, typography } from "../theme"
 
 type Sizes = keyof typeof $sizeStyles
@@ -89,7 +89,7 @@ const $fontWeightStyles = Object.entries(typography.primary).reduce((acc, [weigh
 
 const $baseStyle: StyleProp<TextStyle> = [
   $sizeStyles.sm,
-  $fontWeightStyles.normal,
+  $fontWeightStyles.regular,
   { color: colors.text },
 ]
 
@@ -98,13 +98,17 @@ const $presets = {
 
   bold: [$baseStyle, $fontWeightStyles.bold] as StyleProp<TextStyle>,
 
-  heading: [$baseStyle, $sizeStyles.xxl, $fontWeightStyles.bold] as StyleProp<TextStyle>,
+  heading: [
+    $baseStyle,
+    $sizeStyles.xxl,
+    { fontFamily: typography.secondary.regular },
+  ] as StyleProp<TextStyle>,
 
   subheading: [$baseStyle, $sizeStyles.lg, $fontWeightStyles.medium] as StyleProp<TextStyle>,
 
   formLabel: [$baseStyle, $fontWeightStyles.medium] as StyleProp<TextStyle>,
 
-  formHelper: [$baseStyle, $sizeStyles.sm, $fontWeightStyles.normal] as StyleProp<TextStyle>,
+  formHelper: [$baseStyle, $sizeStyles.sm, $fontWeightStyles.regular] as StyleProp<TextStyle>,
 }
 
 const $rtlStyle: TextStyle = isRTL ? { writingDirection: "rtl" } : {}
