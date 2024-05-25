@@ -3,16 +3,9 @@ import { AppStackScreenProps } from "app/navigators"
 import { useMountEffect } from "app/utils/useMountEffect"
 import { observer } from "mobx-react-lite"
 
-import { Backdrop } from "app/components"
 import { themeData } from "app/models/Theme"
 import React, { FC, useRef, useState } from "react"
-import {
-  FlatList,
-  ImageBackground,
-  ImageSourcePropType,
-  ImageStyle,
-  useWindowDimensions,
-} from "react-native"
+import { FlatList, ImageSourcePropType, View, useWindowDimensions } from "react-native"
 import Animated, {
   runOnJS,
   useAnimatedScrollHandler,
@@ -23,7 +16,7 @@ import { $root, MemoizedCard } from "./HabitCard"
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
 
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
-  const { width: screenWidth } = useWindowDimensions()
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions()
 
   // Get the habits from the store. Since reanimated cannot work with mobx observables,
   // we need to extract the data in a JS format
@@ -97,12 +90,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   })
 
   return (
-    <ImageBackground style={$root} imageStyle={$imageBg} source={bgImage}>
-      <Backdrop
-        value={scrollXNormalized}
-        inputRange={[0, 0.4, 0.5, 0.6, 1]}
-        outputRange={[0, 1, 1, 1, 0]}
-      />
+    <View style={$root}>
       <Animated.FlatList
         ref={listRef}
         data={data}
@@ -121,10 +109,9 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         scrollEventThrottle={16}
         onScroll={scrollHandler}
         pagingEnabled
+        style={{ height: screenHeight }}
         showsHorizontalScrollIndicator={false}
       />
-    </ImageBackground>
+    </View>
   )
 })
-
-const $imageBg: ImageStyle = { opacity: 0.7 }

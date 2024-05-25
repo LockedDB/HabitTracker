@@ -8,6 +8,7 @@ import {
   ImageStyle,
   Pressable,
   StyleProp,
+  StyleSheet,
   TextStyle,
   View,
   ViewStyle,
@@ -87,16 +88,22 @@ function HabitCard(props: CardProps) {
     }, COMPLETE_HABIT_TIME)
   }
 
-  const $rAnimatedTransform = useAnimatedStyle(() => {
+  const $rScale = useAnimatedStyle(() => {
     // Define the range of scroll positions for the previous, current, and next card
-    const inputRange = [
-      (index - 1) * screenWidth, // Previous card
-      index * screenWidth, // Current card
-      (index + 1) * screenWidth, // Next card
-    ]
+    const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
 
     // Define the scale values for the previous, current, and next card
-    const outputRange = [0.5, 0.9, 0.5] // Scale is smaller for the previous and next cards
+    const outputRange = [0.3, 1, 0.3] // Scale is smaller for the previous
+    const scale = interpolate(scrollX.value, inputRange, outputRange)
+    return { transform: [{ scale }] }
+  })
+
+  const $rAnimatedTransform = useAnimatedStyle(() => {
+    // Define the range of scroll positions for the previous, current, and next card
+    const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
+
+    // Define the scale values for the previous, current, and next card
+    const outputRange = [0.3, 1, 0.3] // Scale is smaller for the previous and next cards
 
     // Calculate the scale of the card based on the current scroll position
     const scale = pressingAnimation.value * interpolate(scrollX.value, inputRange, outputRange)
@@ -115,6 +122,7 @@ function HabitCard(props: CardProps) {
   const $rectangleContainer: ViewStyle = {
     width: screenWidth,
     alignItems: "center",
+    alignSelf: "center",
   }
 
   const $cardStyle: StyleProp<ViewStyle> = [
@@ -124,58 +132,67 @@ function HabitCard(props: CardProps) {
   ]
 
   return (
-    <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View style={$cardStyle}>
-        <ImageBackground
-          style={$barbellImageContainer}
-          source={theme.image}
-          imageStyle={$barbellImage}
-        >
-          <View style={$header}>
-            <Text preset="heading" size="xxl" style={$textColor}>
-              Be Interesting
-            </Text>
-            <Text size="sm">
-              I will read a page every night after getting in bed so that I can become an
-              interesting person.
-            </Text>
-            <View style={$content}>
-              <Text preset="bold" size="md">
-                Streak
+    <>
+      <AnimatedImageBackground
+        source={theme.image}
+        imageStyle={{ borderRadius: $card.borderRadius }}
+        style={[StyleSheet.absoluteFill, $rScale]}
+      />
+      <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
+        <Animated.View style={$cardStyle}>
+          <ImageBackground
+            style={$barbellImageContainer}
+            source={theme.image}
+            imageStyle={$barbellImage}
+          >
+            <View style={$header}>
+              <Text preset="heading" size="xxl" style={$textColor}>
+                Be Interesting
               </Text>
-              <View style={$streakContainer}>
-                {Array.from({ length: 7 }).map((_, index) => {
-                  const icon = index % 2 === 0 ? theme.icon.active : theme.icon.inactive
-                  return (
-                    <View key={index} style={$iconContainer}>
-                      <Icon icon={icon as IconTypes} color={theme.color} />
-                      <Text size="xs" preset="bold">
-                        {days[index]}
-                      </Text>
-                    </View>
-                  )
-                })}
+              <Text size="sm">
+                I will read a page every night after getting in bed so that I can become an
+                interesting person.
+              </Text>
+              <View style={$content}>
+                <Text preset="bold" size="md">
+                  Streak
+                </Text>
+                <View style={$streakContainer}>
+                  {Array.from({ length: 7 }).map((_, index) => {
+                    const icon = index % 2 === 0 ? theme.icon.active : theme.icon.inactive
+                    return (
+                      <View key={index} style={$iconContainer}>
+                        <Icon icon={icon as IconTypes} color={theme.color} />
+                        <Text size="xs" preset="bold">
+                          {days[index]}
+                        </Text>
+                      </View>
+                    )
+                  })}
+                </View>
+                <Text preset="bold" size="md">
+                  Reward
+                </Text>
+                <Text size="sm">I will put 5€ into an account to pay for courses.</Text>
               </View>
-              <Text preset="bold" size="md">
-                Reward
-              </Text>
-              <Text size="sm">I will put 5€ into an account to pay for courses.</Text>
             </View>
-          </View>
-          <Icon
-            onPress={() => console.log("settings")}
-            icon="settings"
-            size={20}
-            containerStyle={$settingsIcon}
-          />
-          <Text size="xxs" style={$pagination}>
-            {index}/{rootStore.habits.length}
-          </Text>
-        </ImageBackground>
-      </Animated.View>
-    </Pressable>
+            <Icon
+              onPress={() => console.log("settings")}
+              icon="settings"
+              size={20}
+              containerStyle={$settingsIcon}
+            />
+            <Text size="xxs" style={$pagination}>
+              {index}/{rootStore.habits.length}
+            </Text>
+          </ImageBackground>
+        </Animated.View>
+      </Pressable>
+    </>
   )
 }
+
+const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
 
 export const MemoizedCard = React.memo(HabitCard)
 
@@ -183,9 +200,6 @@ const days = ["M", "T", "W", "T", "F", "S", "S"]
 
 export const $root: ViewStyle = {
   flex: 1,
-  justifyContent: "center",
-  flexDirection: "row",
-  alignItems: "center",
 }
 
 const $card: ViewStyle = {
