@@ -1,6 +1,7 @@
 import { generateUUID } from "app/utils/uuid"
 import { isToday } from "date-fns"
 import { Instance, SnapshotIn, SnapshotOut, types } from "mobx-state-tree"
+import { HabitTheme } from "./Theme"
 import { withSetPropAction } from "./helpers/withSetPropAction"
 
 export const HabitModel = types
@@ -10,6 +11,7 @@ export const HabitModel = types
     name: types.string,
     dates: types.optional(types.array(types.Date), []),
     streak: types.optional(types.number, 0),
+    theme: types.optional(types.enumeration(Object.values(HabitTheme)), HabitTheme.Astro),
   })
   .actions(withSetPropAction)
   .views((self) => ({

@@ -1,47 +1,45 @@
-import { Backdrop, Screen } from "app/components"
 import { Habit, useStores } from "app/models"
 import { AppStackScreenProps } from "app/navigators"
-import { colors, spacing } from "app/theme"
 import { useMountEffect } from "app/utils/useMountEffect"
 import { observer } from "mobx-react-lite"
 
+import { themeData } from "app/models/Theme"
 import React, { FC, useRef, useState } from "react"
-import { FlatList, View, ViewStyle, useWindowDimensions } from "react-native"
+import { FlatList, ImageSourcePropType, View, useWindowDimensions } from "react-native"
 import Animated, {
-  Extrapolation,
-  SharedValue,
-  interpolate,
   runOnJS,
   useAnimatedScrollHandler,
-  useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated"
-import { $container, $root, MemoizedCard } from "./HabitCard"
+import { $root, MemoizedCard } from "./HabitCard"
 
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
 
-export const COMPLETE_HABIT_TIME = 3000
-const HABIT_CANCELED_TIME = 500
-
-/**
- * 1. Manage to stop the scroll at the right points ✅
- * 2. Animation of scaling left and right rectangles ✅
- * 3. Infinite scroll one way ✅
- * 4. Pressing the card makes it scale up slowly ✅
- * 5. Add slowly a dark backdrop to the card ✅
- * 6. At the same time, the card shakes every second a bit more ✅
- * 7. Add pagination dots (could be mini versions of the cards in the future)
- */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions()
+
+  // Get the habits from the store. Since reanimated cannot work with mobx observables,
+  // we need to extract the data in a JS format
   const habits = useStores().jsHabits
-  const listRef = useRef<FlatList>(null)
-  const currentIndex = useSharedValue(1)
-  const pressing = useSharedValue(false)
-  const { width: screenWidth } = useWindowDimensions()
 
+  const [bgImage, setCurrentBgImage] = useState<ImageSourcePropType>(
+    themeData[habits[0].theme].image,
+  )
+
+  // Scroll value for the flatlist, copied from the scroll event content offset
   const scrollX = useSharedValue(screenWidth)
+  // Normalized scroll value, goes from 0 to 1
+  const scrollXNormalized = useSharedValue(0)
 
+  const isPressing = useSharedValue(false)
+
+  // Current tab being displayed, changes when the user scrolls halfway through the screen
+  const currentTab = useSharedValue(1)
+
+  // Data for the flatlist, contains the habits and two extra items at the beginning and end
   const [data, setData] = useState<Habit[]>(habits)
+
+  const listRef = useRef<FlatList>(null)
 
   // Scroll to beggining or end of the list
   const scrollToOffset = (index: number) => {
@@ -51,21 +49,31 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x
+
+      scrollXNormalized.value = (event.contentOffset.x % screenWidth) / screenWidth
+
+      currentTab.value = Math.round(scrollX.value / screenWidth)
+
+      const newImage: ImageSourcePropType = themeData[data[currentTab.value].theme].image
+      if (newImage !== bgImage) {
+        runOnJS(setCurrentBgImage)(newImage)
+      }
     },
     onMomentumEnd: (event) => {
       // Calculate the current index being displayed
       const { contentOffset } = event
       const index = Math.round(contentOffset.x / screenWidth)
 
-      currentIndex.value = index
-
       // If the index is the first or last, scroll to the opposite end
       // to create the infinite scroll effect
       if (habits.length > 1 && (index === 0 || index === habits.length + 1)) {
         const newIndex = index === 0 ? habits.length : 1
         runOnJS(scrollToOffset)(newIndex)
-        currentIndex.value = newIndex
+        currentTab.value = newIndex
       }
+
+      // Reset the normalized value when the user stops scrolling on each card
+      scrollXNormalized.value = 0
     },
   })
 
@@ -82,28 +90,18 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   })
 
   return (
-    <Screen
-      style={$root}
-      contentContainerStyle={$container}
-      preset="fixed"
-      backgroundColor={colors.backgroundSecondary}
-    >
-      <Backdrop
-        visible={pressing}
-        enterAnimationConfig={{ duration: COMPLETE_HABIT_TIME }}
-        exitAnimationConfig={{ duration: HABIT_CANCELED_TIME }}
-      />
+    <View style={$root}>
       <Animated.FlatList
         ref={listRef}
         data={data}
         contentOffset={{ x: screenWidth, y: 0 }}
         renderItem={({ item, index }) => (
           <MemoizedCard
-            selectedIndex={currentIndex}
+            selectedIndex={currentTab}
             item={item}
             index={index}
             scrollX={scrollX}
-            pressing={pressing}
+            pressing={isPressing}
           />
         )}
         horizontal
@@ -111,64 +109,9 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         scrollEventThrottle={16}
         onScroll={scrollHandler}
         pagingEnabled
+        style={{ height: screenHeight }}
         showsHorizontalScrollIndicator={false}
       />
-      {/* Pagination
-       * 1. Add the three dots at the bottom of the screen
-       * 7. The habits completed can have a little checkmark on the dot
-       */}
-      <Pagination habits={habits} scrollX={scrollX} />
-    </Screen>
-  )
-})
-
-type PaginationProps = {
-  scrollX: SharedValue<number>
-  habits: Habit[]
-}
-
-function Pagination({ scrollX, habits }: PaginationProps) {
-  return (
-    <View style={$paginationContainer}>
-      {habits.map((_, index) => (
-        /* Take into account that the pagination here, starts with offset 1 */
-        <Dot key={index} index={index + 1} scrollX={scrollX} />
-      ))}
     </View>
   )
-}
-
-function Dot({ index, scrollX }: { index: number; scrollX: SharedValue<number> }) {
-  const { width: screenWidth } = useWindowDimensions()
-
-  const $rActive = useAnimatedStyle(() => {
-    const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
-    const extrapolate = {
-      extrapolateLeft: Extrapolation.CLAMP,
-      extrapolateRight: Extrapolation.CLAMP,
-    }
-
-    const translateY = interpolate(scrollX.value, inputRange, [0, -1, 0], extrapolate)
-    const scale = interpolate(scrollX.value, inputRange, [1, 1.1, 1], extrapolate)
-    const opacity = interpolate(scrollX.value, inputRange, [0.5, 1, 0.5], extrapolate)
-
-    return { opacity, transform: [{ translateY }, { scale }] }
-  })
-
-  return <Animated.View style={[$dot, $rActive]} />
-}
-
-const $paginationContainer: ViewStyle = {
-  flexDirection: "row",
-  position: "absolute",
-  bottom: spacing.xxxl,
-  alignSelf: "center",
-  columnGap: spacing.xs,
-}
-
-const $dot: ViewStyle = {
-  width: 8,
-  height: 8,
-  borderRadius: 5,
-  backgroundColor: colors.tint,
-}
+})
