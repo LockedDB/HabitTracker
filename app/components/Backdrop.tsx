@@ -4,9 +4,9 @@ import { StyleProp, StyleSheet, ViewStyle } from "react-native"
 import Animated, {
   SharedValue,
   WithTimingConfig,
+  interpolate,
   useAnimatedStyle,
   useDerivedValue,
-  withTiming,
 } from "react-native-reanimated"
 
 export interface BackdropProps {
@@ -17,7 +17,15 @@ export interface BackdropProps {
   /**
    * Toggle the visibility of the backdrop with an animation.
    */
-  visible: SharedValue<boolean>
+  value: SharedValue<number>
+  /**
+   * Input range
+   */
+  inputRange: number[]
+  /**
+   * Output range
+   */
+  outputRange: number[]
   /**
    * The children of the backdrop.
    */
@@ -36,10 +44,10 @@ export interface BackdropProps {
  * A dark backdrop that can be used to overlay content.
  */
 export function Backdrop(props: BackdropProps) {
-  const { style, children, enterAnimationConfig, exitAnimationConfig, visible } = props
+  const { style, children, value } = props
 
   const opacity = useDerivedValue(() =>
-    visible.value ? withTiming(0.5, enterAnimationConfig) : withTiming(0, exitAnimationConfig),
+    interpolate(value.value, props.inputRange, props.outputRange),
   )
 
   const $rBackdrop = useAnimatedStyle(() => ({
@@ -53,5 +61,5 @@ export function Backdrop(props: BackdropProps) {
 
 const $backdrop: ViewStyle = {
   ...StyleSheet.absoluteFillObject,
-  backgroundColor: colors.palette.neutral900,
+  backgroundColor: colors.palette.neutral100,
 }

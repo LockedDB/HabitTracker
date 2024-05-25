@@ -1,5 +1,6 @@
-import { Icon, Text } from "app/components"
+import { Icon, IconTypes, Text } from "app/components"
 import { Habit, useStores } from "app/models"
+import { themeData } from "app/models/Theme"
 import { colors, spacing } from "app/theme"
 import React, { useRef } from "react"
 import {
@@ -21,7 +22,6 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated"
-import { COMPLETE_HABIT_TIME } from "./HomeScreen"
 
 type CardProps = {
   item: Habit
@@ -31,12 +31,10 @@ type CardProps = {
   selectedIndex: SharedValue<number>
 }
 
-const barbell = require("../../assets/images/dumbbells.png")
-
 function HabitCard(props: CardProps) {
   const rootStore = useStores()
   const { item, index, scrollX, selectedIndex, pressing } = props
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const theme = themeData[item.theme]
 
   const { width: screenWidth } = useWindowDimensions()
 
@@ -47,38 +45,20 @@ function HabitCard(props: CardProps) {
       : 1,
   )
 
-  const vibrate = useDerivedValue(() =>
+  const pressingVibrate = useDerivedValue(() =>
     pressing.value && index === selectedIndex.value
       ? withRepeat(withTiming(-0.5 * vibrationMultiplier.value, { duration: 50 }), -1, true)
       : 0,
   )
 
   // Scale up the card when it's being pressed
-  const scaleUp = useDerivedValue(() =>
+  const pressingAnimation = useDerivedValue(() =>
     pressing.value && index === selectedIndex.value
       ? withTiming(1, { duration: COMPLETE_HABIT_TIME, easing: Easing.out(Easing.ease) })
       : withTiming(0.9, { duration: 500 }),
   )
 
-  const $rectangleContainer: ViewStyle = {
-    width: screenWidth,
-    alignItems: "center",
-    justifyContent: "center",
-  }
-
-  const $rectangle: ViewStyle = {
-    width: screenWidth / 1.2,
-    aspectRatio: 1 / 1.5,
-    borderRadius: 32,
-    shadowColor: colors.shadow,
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 4,
-    backgroundColor: colors.background,
-    borderColor: colors.border,
-    borderCurve: "continuous",
-    borderWidth: 4,
-  }
+  const timeoutRef = useRef<NodeJS.Timeout>()
 
   const onPressOut = () => {
     pressing.value = false
@@ -107,23 +87,52 @@ function HabitCard(props: CardProps) {
     }, COMPLETE_HABIT_TIME)
   }
 
-  const $rRectangle = useAnimatedStyle(() => {
-    const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
-    const outputRange = [0.5, 0.9, 0.5]
+  const $rAnimatedTransform = useAnimatedStyle(() => {
+    // Define the range of scroll positions for the previous, current, and next card
+    const inputRange = [
+      (index - 1) * screenWidth, // Previous card
+      index * screenWidth, // Current card
+      (index + 1) * screenWidth, // Next card
+    ]
 
-    const scale = scaleUp.value * interpolate(scrollX.value, inputRange, outputRange)
+    // Define the scale values for the previous, current, and next card
+    const outputRange = [0.5, 0.9, 0.5] // Scale is smaller for the previous and next cards
 
-    return { transform: [{ scale }, { translateX: vibrate.value }, { translateY: vibrate.value }] }
+    // Calculate the scale of the card based on the current scroll position
+    const scale = pressingAnimation.value * interpolate(scrollX.value, inputRange, outputRange)
+
+    return {
+      transform: [
+        { scale },
+        { translateX: pressingVibrate.value },
+        { translateY: pressingVibrate.value },
+      ],
+    }
   })
 
-  const $cardStyle: StyleProp<ViewStyle> = [$rRectangle, $rectangle]
+  const $textColor: TextStyle = { color: theme.color }
+
+  const $rectangleContainer: ViewStyle = {
+    width: screenWidth,
+    alignItems: "center",
+  }
+
+  const $cardStyle: StyleProp<ViewStyle> = [
+    $card,
+    { width: screenWidth / 1.2 },
+    $rAnimatedTransform,
+  ]
 
   return (
     <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
       <Animated.View style={$cardStyle}>
-        <ImageBackground style={$barbellImageContainer} source={barbell} imageStyle={$barbellImage}>
+        <ImageBackground
+          style={$barbellImageContainer}
+          source={theme.image}
+          imageStyle={$barbellImage}
+        >
           <View style={$header}>
-            <Text preset="heading" size="xxl">
+            <Text preset="heading" size="xxl" style={$textColor}>
               Be Interesting
             </Text>
             <Text size="sm">
@@ -135,14 +144,17 @@ function HabitCard(props: CardProps) {
                 Streak
               </Text>
               <View style={$streakContainer}>
-                {Array.from({ length: 7 }).map((_, index) => (
-                  <View key={index} style={$iconContainer}>
-                    <Icon icon="barbell" color="black" />
-                    <Text size="xs" preset="bold">
-                      {days[index]}
-                    </Text>
-                  </View>
-                ))}
+                {Array.from({ length: 7 }).map((_, index) => {
+                  const icon = index % 2 === 0 ? theme.icon.active : theme.icon.inactive
+                  return (
+                    <View key={index} style={$iconContainer}>
+                      <Icon icon={icon as IconTypes} color={theme.color} />
+                      <Text size="xs" preset="bold">
+                        {days[index]}
+                      </Text>
+                    </View>
+                  )
+                })}
               </View>
               <Text preset="bold" size="md">
                 Reward
@@ -174,6 +186,19 @@ export const $root: ViewStyle = {
   justifyContent: "center",
   flexDirection: "row",
   alignItems: "center",
+}
+
+const $card: ViewStyle = {
+  aspectRatio: 1 / 1.5,
+  borderRadius: 32,
+  shadowColor: colors.shadow,
+  shadowOpacity: 1,
+  shadowOffset: { width: 0, height: 0 },
+  shadowRadius: 4,
+  backgroundColor: colors.background,
+  borderColor: colors.border,
+  borderCurve: "continuous",
+  borderWidth: 4,
 }
 
 const $header: ViewStyle = {
@@ -217,3 +242,5 @@ const $pagination: TextStyle = {
   right: spacing.sm,
   fontFamily: "PoetsenOne-Regular",
 }
+
+const COMPLETE_HABIT_TIME = 3000

@@ -1,5 +1,6 @@
 import { Button, Screen, TextField } from "app/components"
 import { useStores } from "app/models"
+import { HabitTheme } from "app/models/Theme"
 import { AppStackScreenProps } from "app/navigators"
 import { spacing } from "app/theme"
 import { useHeader } from "app/utils/useHeader"
@@ -18,6 +19,7 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
     const [habit, setHabit] = useState("")
     const [when, setWhen] = useState("")
     const [identity, setIdentity] = useState("")
+    const [theme, setTheme] = useState(HabitTheme.Astro)
 
     useHeader({
       title: "New habit",
@@ -26,9 +28,12 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
     })
 
     const createHabit = useCallback(() => {
-      rootStore.addHabit({ name: `I will ${habit} every ${when} so that I can become ${identity}` })
+      rootStore.addHabit({
+        name: `I will ${habit} every ${when} so that I can become ${identity}`,
+        theme,
+      })
       goBack()
-    }, [habit, when, identity])
+    }, [habit, when, identity, theme])
 
     return (
       <Screen
@@ -61,6 +66,12 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
             autoCapitalize="none"
             onChangeText={(value) => setIdentity(value)}
           />
+          <Button preset="reversed" onPress={() => setTheme(HabitTheme.Astro)}>
+            Astro
+          </Button>
+          <Button preset="reversed" onPress={() => setTheme(HabitTheme.Sport)}>
+            Sport
+          </Button>
         </View>
         <Button disabled={!habit} preset={!habit ? "filled" : "reversed"} onPress={createHabit}>
           New habit

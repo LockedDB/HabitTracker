@@ -1,11 +1,18 @@
-import { Backdrop } from "app/components"
 import { Habit, useStores } from "app/models"
 import { AppStackScreenProps } from "app/navigators"
 import { useMountEffect } from "app/utils/useMountEffect"
 import { observer } from "mobx-react-lite"
 
+import { Backdrop } from "app/components"
+import { themeData } from "app/models/Theme"
 import React, { FC, useRef, useState } from "react"
-import { FlatList, ImageBackground, ImageStyle, useWindowDimensions } from "react-native"
+import {
+  FlatList,
+  ImageBackground,
+  ImageSourcePropType,
+  ImageStyle,
+  useWindowDimensions,
+} from "react-native"
 import Animated, {
   runOnJS,
   useAnimatedScrollHandler,
@@ -13,32 +20,33 @@ import Animated, {
 } from "react-native-reanimated"
 import { $root, MemoizedCard } from "./HabitCard"
 
-const dumbbell = require("../../assets/images/dumbbells.png")
-
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
 
-export const COMPLETE_HABIT_TIME = 3000
-const HABIT_CANCELED_TIME = 500
-
-/**
- * 1. Manage to stop the scroll at the right points ✅
- * 2. Animation of scaling left and right rectangles ✅
- * 3. Infinite scroll one way ✅
- * 4. Pressing the card makes it scale up slowly ✅
- * 5. Add slowly a dark backdrop to the card ✅
- * 6. At the same time, the card shakes every second a bit more ✅
- * 7. Add pagination dots (could be mini versions of the cards in the future)
- */
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
-  const habits = useStores().jsHabits
-  const listRef = useRef<FlatList>(null)
-  const currentIndex = useSharedValue(1)
-  const pressing = useSharedValue(false)
   const { width: screenWidth } = useWindowDimensions()
 
-  const scrollX = useSharedValue(screenWidth)
+  // Get the habits from the store. Since reanimated cannot work with mobx observables,
+  // we need to extract the data in a JS format
+  const habits = useStores().jsHabits
 
+  const [bgImage, setCurrentBgImage] = useState<ImageSourcePropType>(
+    themeData[habits[0].theme].image,
+  )
+
+  // Scroll value for the flatlist, copied from the scroll event content offset
+  const scrollX = useSharedValue(screenWidth)
+  // Normalized scroll value, goes from 0 to 1
+  const scrollXNormalized = useSharedValue(0)
+
+  const isPressing = useSharedValue(false)
+
+  // Current tab being displayed, changes when the user scrolls halfway through the screen
+  const currentTab = useSharedValue(1)
+
+  // Data for the flatlist, contains the habits and two extra items at the beginning and end
   const [data, setData] = useState<Habit[]>(habits)
+
+  const listRef = useRef<FlatList>(null)
 
   // Scroll to beggining or end of the list
   const scrollToOffset = (index: number) => {
@@ -48,21 +56,31 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollX.value = event.contentOffset.x
+
+      scrollXNormalized.value = (event.contentOffset.x % screenWidth) / screenWidth
+
+      currentTab.value = Math.round(scrollX.value / screenWidth)
+
+      const newImage: ImageSourcePropType = themeData[data[currentTab.value].theme].image
+      if (newImage !== bgImage) {
+        runOnJS(setCurrentBgImage)(newImage)
+      }
     },
     onMomentumEnd: (event) => {
       // Calculate the current index being displayed
       const { contentOffset } = event
       const index = Math.round(contentOffset.x / screenWidth)
 
-      currentIndex.value = index
-
       // If the index is the first or last, scroll to the opposite end
       // to create the infinite scroll effect
       if (habits.length > 1 && (index === 0 || index === habits.length + 1)) {
         const newIndex = index === 0 ? habits.length : 1
         runOnJS(scrollToOffset)(newIndex)
-        currentIndex.value = newIndex
+        currentTab.value = newIndex
       }
+
+      // Reset the normalized value when the user stops scrolling on each card
+      scrollXNormalized.value = 0
     },
   })
 
@@ -79,11 +97,11 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   })
 
   return (
-    <ImageBackground style={$root} imageStyle={$imageBg} source={dumbbell}>
+    <ImageBackground style={$root} imageStyle={$imageBg} source={bgImage}>
       <Backdrop
-        visible={pressing}
-        enterAnimationConfig={{ duration: COMPLETE_HABIT_TIME }}
-        exitAnimationConfig={{ duration: HABIT_CANCELED_TIME }}
+        value={scrollXNormalized}
+        inputRange={[0, 0.4, 0.5, 0.6, 1]}
+        outputRange={[0, 1, 1, 1, 0]}
       />
       <Animated.FlatList
         ref={listRef}
@@ -91,11 +109,11 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         contentOffset={{ x: screenWidth, y: 0 }}
         renderItem={({ item, index }) => (
           <MemoizedCard
-            selectedIndex={currentIndex}
+            selectedIndex={currentTab}
             item={item}
             index={index}
             scrollX={scrollX}
-            pressing={pressing}
+            pressing={isPressing}
           />
         )}
         horizontal
@@ -109,6 +127,4 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   )
 })
 
-const $imageBg: ImageStyle = {
-  opacity: 0.7,
-}
+const $imageBg: ImageStyle = { opacity: 0.7 }
