@@ -136,7 +136,7 @@ function HabitCard(props: CardProps) {
       <AnimatedImageBackground
         source={theme.image}
         imageStyle={{ borderRadius: $card.borderRadius }}
-        style={[StyleSheet.absoluteFill, $rScale]}
+        style={[StyleSheet.absoluteFill, $cardEffects, $rScale]}
       />
       <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
         <Animated.View style={$cardStyle}>
@@ -154,16 +154,13 @@ function HabitCard(props: CardProps) {
                 interesting person.
               </Text>
               <View style={$content}>
-                <Text preset="bold" size="md">
-                  Streak
-                </Text>
                 <View style={$streakContainer}>
                   {Array.from({ length: 7 }).map((_, index) => {
                     const icon = index % 2 === 0 ? theme.icon.active : theme.icon.inactive
                     return (
                       <View key={index} style={$iconContainer}>
                         <Icon icon={icon as IconTypes} color={theme.color} />
-                        <Text size="xs" preset="bold">
+                        <Text size="xxs" preset="bold" style={$textColor}>
                           {days[index]}
                         </Text>
                       </View>
@@ -202,6 +199,14 @@ export const $root: ViewStyle = {
   flex: 1,
 }
 
+const $cardEffects: ImageStyle = {
+  borderRadius: 32,
+  shadowColor: colors.shadow,
+  shadowOpacity: 1,
+  shadowOffset: { width: 0, height: 0 },
+  shadowRadius: 4,
+}
+
 const $card: ViewStyle = {
   aspectRatio: 1 / 1.5,
   borderRadius: 32,
@@ -226,6 +231,7 @@ const $content: ViewStyle = {
 const $streakContainer: ViewStyle = {
   flexDirection: "row",
   justifyContent: "space-between",
+  paddingVertical: spacing.md,
 }
 
 const $iconContainer: ViewStyle = {
