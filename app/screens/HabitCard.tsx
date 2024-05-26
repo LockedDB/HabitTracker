@@ -20,6 +20,7 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
   useDerivedValue,
+  useSharedValue,
   withRepeat,
   withTiming,
 } from "react-native-reanimated"
@@ -98,7 +99,11 @@ function HabitCard(props: CardProps) {
     return { transform: [{ scale }] }
   })
 
+  const flip = useSharedValue(0)
+
   const $rAnimatedTransform = useAnimatedStyle(() => {
+    const rotateY = interpolate(flip.value, [0, 1], [0, Math.PI])
+
     // Define the range of scroll positions for the previous, current, and next card
     const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
 
@@ -113,22 +118,40 @@ function HabitCard(props: CardProps) {
         { scale },
         { translateX: pressingVibrate.value },
         { translateY: pressingVibrate.value },
+        { rotateY: withTiming(`${rotateY}rad`) },
       ],
     }
   })
 
   const $textColor: TextStyle = { color: theme.color }
 
-  const $rectangleContainer: ViewStyle = {
+  const $cardContainerStyle: ViewStyle = {
+    position: "relative",
     width: screenWidth,
     alignItems: "center",
     alignSelf: "center",
   }
 
+  const $animatedFrontZIndex = useAnimatedStyle(() => ({ zIndex: flip.value === 0 ? 1 : -1 }))
+
+  const $animatedBackZIndex = useAnimatedStyle(() => ({ zIndex: flip.value === 0 ? -1 : 1 }))
+
   const $cardStyle: StyleProp<ViewStyle> = [
     $card,
     { width: screenWidth / 1.2 },
     $rAnimatedTransform,
+    $animatedFrontZIndex,
+  ]
+
+  const $emptyCardStyle: StyleProp<ViewStyle> = [
+    $card,
+    {
+      position: "absolute",
+      zIndex: flip.value === 0 ? -1 : 1,
+      width: screenWidth / 1.2,
+    },
+    $rAnimatedTransform,
+    $animatedBackZIndex,
   ]
 
   return (
@@ -143,7 +166,17 @@ function HabitCard(props: CardProps) {
           $rScale,
         ]}
       />
-      <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
+      <Pressable style={$cardContainerStyle} onPressIn={onPressIn} onPressOut={onPressOut}>
+        <Animated.View style={$emptyCardStyle}>
+          <Icon
+            icon="settings"
+            size={20}
+            containerStyle={$settingsIcon}
+            onPress={() => {
+              flip.value = flip.value === 0 ? 1 : 0
+            }}
+          />
+        </Animated.View>
         <Animated.View style={$cardStyle}>
           <ImageBackground
             style={$barbellImageContainer}
@@ -179,7 +212,9 @@ function HabitCard(props: CardProps) {
               </View>
             </View>
             <Icon
-              onPress={() => console.log("settings")}
+              onPress={() => {
+                flip.value = flip.value === 0 ? 1 : 0
+              }}
               icon="settings"
               size={20}
               containerStyle={$settingsIcon}
