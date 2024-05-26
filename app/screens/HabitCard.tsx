@@ -8,7 +8,6 @@ import {
   ImageStyle,
   Pressable,
   StyleProp,
-  StyleSheet,
   TextStyle,
   View,
   ViewStyle,
@@ -56,8 +55,8 @@ function HabitCard(props: CardProps) {
   // Scale up the card when it's being pressed
   const pressingAnimation = useDerivedValue(() =>
     pressing.value && index === selectedIndex.value
-      ? withTiming(1, { duration: COMPLETE_HABIT_TIME, easing: Easing.out(Easing.ease) })
-      : withTiming(0.9, { duration: 500 }),
+      ? withTiming(1.1, { duration: COMPLETE_HABIT_TIME, easing: Easing.out(Easing.ease) })
+      : withTiming(1, { duration: 500 }),
   )
 
   const timeoutRef = useRef<NodeJS.Timeout>()
@@ -104,22 +103,27 @@ function HabitCard(props: CardProps) {
   const $rAnimatedTransform = useAnimatedStyle(() => {
     const rotateY = interpolate(flip.value, [0, 1], [0, Math.PI])
 
-    // Define the range of scroll positions for the previous, current, and next card
-    const inputRange = [(index - 1) * screenWidth, index * screenWidth, (index + 1) * screenWidth]
-
-    // Define the scale values for the previous, current, and next card
-    const outputRange = [0.3, 1, 0.3] // Scale is smaller for the previous and next cards
-
     // Calculate the scale of the card based on the current scroll position
-    const scale = pressingAnimation.value * interpolate(scrollX.value, inputRange, outputRange)
+    const scale = pressing.value && index === selectedIndex.value ? pressingAnimation.value : 1
 
     return {
       transform: [
+        { perspective: 1000 },
         { scale },
         { translateX: pressingVibrate.value },
         { translateY: pressingVibrate.value },
         { rotateY: withTiming(`${rotateY}rad`) },
       ],
+      zIndex: flip.value === 0 ? 1 : -1,
+    }
+  })
+
+  const $rAnimatedBackTransform = useAnimatedStyle(() => {
+    const rotateY = interpolate(flip.value, [0, 1], [Math.PI, 2 * Math.PI])
+
+    return {
+      zIndex: flip.value === 0 ? -1 : 1,
+      transform: [{ perspective: 1000 }, { rotateY: withTiming(`${rotateY}rad`) }],
     }
   })
 
@@ -132,15 +136,10 @@ function HabitCard(props: CardProps) {
     alignSelf: "center",
   }
 
-  const $animatedFrontZIndex = useAnimatedStyle(() => ({ zIndex: flip.value === 0 ? 1 : -1 }))
-
-  const $animatedBackZIndex = useAnimatedStyle(() => ({ zIndex: flip.value === 0 ? -1 : 1 }))
-
   const $cardStyle: StyleProp<ViewStyle> = [
     $card,
-    { width: screenWidth / 1.2 },
+    { width: screenWidth / 1.3 },
     $rAnimatedTransform,
-    $animatedFrontZIndex,
   ]
 
   const $emptyCardStyle: StyleProp<ViewStyle> = [
@@ -148,24 +147,17 @@ function HabitCard(props: CardProps) {
     {
       position: "absolute",
       zIndex: flip.value === 0 ? -1 : 1,
-      width: screenWidth / 1.2,
+      width: screenWidth / 1.3,
     },
-    $rAnimatedTransform,
-    $animatedBackZIndex,
+    $rAnimatedBackTransform,
   ]
 
   return (
-    <>
-      <AnimatedImageBackground
-        source={theme.image}
-        imageStyle={{ borderRadius: $card.borderRadius }}
-        style={[
-          StyleSheet.absoluteFill,
-          $cardEffects,
-          { borderRadius: $card.borderRadius },
-          $rScale,
-        ]}
-      />
+    <AnimatedImageBackground
+      source={theme.image}
+      imageStyle={{ borderRadius: $card.borderRadius }}
+      style={[$cardEffects, $rScale]}
+    >
       <Pressable style={$cardContainerStyle} onPressIn={onPressIn} onPressOut={onPressOut}>
         <Animated.View style={$emptyCardStyle}>
           <Icon
@@ -225,7 +217,7 @@ function HabitCard(props: CardProps) {
           </ImageBackground>
         </Animated.View>
       </Pressable>
-    </>
+    </AnimatedImageBackground>
   )
 }
 
@@ -239,14 +231,6 @@ export const $root: ViewStyle = {
   flex: 1,
 }
 
-const $cardEffects: ImageStyle = {
-  shadowColor: colors.shadow,
-  shadowOpacity: 1,
-  shadowOffset: { width: 0, height: 0 },
-  shadowRadius: 4,
-  backgroundColor: colors.background,
-}
-
 const $card: ViewStyle = {
   aspectRatio: 1 / 1.5,
   borderRadius: 32,
@@ -258,6 +242,16 @@ const $card: ViewStyle = {
   borderColor: colors.border,
   borderCurve: "continuous",
   borderWidth: 4,
+}
+
+const $cardEffects: ImageStyle = {
+  shadowColor: colors.shadow,
+  shadowOpacity: 1,
+  shadowOffset: { width: 0, height: 0 },
+  shadowRadius: 4,
+  backgroundColor: colors.background,
+  borderRadius: $card.borderRadius,
+  justifyContent: "center",
 }
 
 const $header: ViewStyle = {
