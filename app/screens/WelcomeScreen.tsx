@@ -20,6 +20,10 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeSc
     navigation.navigate("Home")
   }
 
+  const navigateToPlayground = () => {
+    navigation.navigate("Playground")
+  }
+
   return (
     <Screen preset="fixed" safeAreaEdges={["top"]} style={$screenStyle}>
       <Text style={$title} preset="heading">
@@ -40,6 +44,9 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = observer(function WelcomeSc
         </Button>
         <Button preset="reversed" onPress={navigateToCards}>
           Go home
+        </Button>
+        <Button preset="reversed" onPress={navigateToPlayground}>
+          Go Playground
         </Button>
       </View>
     </Screen>
