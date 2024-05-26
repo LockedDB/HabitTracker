@@ -136,7 +136,12 @@ function HabitCard(props: CardProps) {
       <AnimatedImageBackground
         source={theme.image}
         imageStyle={{ borderRadius: $card.borderRadius }}
-        style={[StyleSheet.absoluteFill, $cardEffects, $rScale]}
+        style={[
+          StyleSheet.absoluteFill,
+          $cardEffects,
+          { borderRadius: $card.borderRadius },
+          $rScale,
+        ]}
       />
       <Pressable style={$rectangleContainer} onPressIn={onPressIn} onPressOut={onPressOut}>
         <Animated.View style={$cardStyle}>
@@ -200,11 +205,11 @@ export const $root: ViewStyle = {
 }
 
 const $cardEffects: ImageStyle = {
-  borderRadius: 32,
   shadowColor: colors.shadow,
   shadowOpacity: 1,
   shadowOffset: { width: 0, height: 0 },
   shadowRadius: 4,
+  backgroundColor: colors.background,
 }
 
 const $card: ViewStyle = {
