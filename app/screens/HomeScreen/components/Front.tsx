@@ -1,7 +1,7 @@
 import { Icon, IconTypes, Text } from "app/components"
 import { useStores } from "app/models"
 import { Theme } from "app/models/Theme"
-import { colors, spacing } from "app/theme"
+import { spacing } from "app/theme"
 import React from "react"
 import {
   Dimensions,
@@ -21,6 +21,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated"
+import { CARD_HEIGHT, CARD_WIDTH } from "./CardScene"
 import { COMPLETE_HABIT_TIME } from "./consts"
 
 const SCREEN_WIDTH = Dimensions.get("window").width
@@ -77,8 +78,7 @@ export function Front({ flip, pressing, theme, index, selectedIndex }: FrontProp
   const $textColor: TextStyle = { color: theme.color }
 
   const $cardStyle: StyleProp<ViewStyle> = [
-    $card,
-    { width: SCREEN_WIDTH / 1.3 },
+    { width: CARD_WIDTH, height: CARD_HEIGHT },
     $rAnimatedTransform,
   ]
 
@@ -134,19 +134,6 @@ export function Front({ flip, pressing, theme, index, selectedIndex }: FrontProp
 }
 
 const days = ["M", "T", "W", "T", "F", "S", "S"]
-
-const $card: ViewStyle = {
-  aspectRatio: 1 / 1.5,
-  borderRadius: 32,
-  shadowColor: colors.shadow,
-  shadowOpacity: 1,
-  shadowOffset: { width: 0, height: 0 },
-  shadowRadius: 4,
-  backgroundColor: colors.background,
-  borderColor: colors.border,
-  borderCurve: "continuous",
-  borderWidth: 4,
-}
 
 const $header: ViewStyle = {
   rowGap: spacing.xs,

@@ -1,19 +1,36 @@
-import { Habit, useStores } from "app/models"
+import {
+  Quicksand_700Bold as quicksandBold,
+  Quicksand_300Light as quicksandLight,
+  Quicksand_500Medium as quicksandMedium,
+  Quicksand_400Regular as quicksandRegular,
+  Quicksand_600SemiBold as quicksandSemiBold,
+} from "@expo-google-fonts/quicksand"
+import {
+  Canvas,
+  Group,
+  Paragraph,
+  RoundedRect,
+  Skia,
+  processTransform3d,
+  useFonts,
+} from "@shopify/react-native-skia"
+import { Habit } from "app/models"
 import { themeData } from "app/models/Theme"
-import { colors } from "app/theme"
-import React, { useRef } from "react"
-import { Dimensions, ImageBackground, ImageStyle, Pressable, ViewStyle } from "react-native"
+import { colors, spacing } from "app/theme"
+import React, { useMemo } from "react"
+import { Dimensions, ImageBackground, ImageStyle, ViewStyle } from "react-native"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, {
   SharedValue,
   interpolate,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
+  withTiming,
 } from "react-native-reanimated"
-import { Back } from "./Back"
-import { Front } from "./Front"
-import { COMPLETE_HABIT_TIME, cardRadius } from "./consts"
+import { cardRadius } from "./consts"
 
-const SCREEN_WIDTH = Dimensions.get("window").width
+const { width, height } = Dimensions.get("window")
 
 type CardProps = {
   item: Habit
@@ -24,48 +41,14 @@ type CardProps = {
 }
 
 function CardScene(props: CardProps) {
-  const rootStore = useStores()
-  const { item, index, scrollX, pressing } = props
+  const { item, index, scrollX } = props
   const theme = themeData[item.theme]
 
-  const timeoutRef = useRef<NodeJS.Timeout>()
-
-  const flip = useSharedValue(0)
-
-  const onPressOut = () => {
-    pressing.value = false
-    clearTimeout(timeoutRef.current)
-  }
-
-  // When the card is pressed, for `COMPLETE_HABIT_TIME`
-  // it will complete the habit
-  const onPressIn = () => {
-    pressing.value = true
-
-    timeoutRef.current = setTimeout(() => {
-      // Since it can happen that the user presses the "duplicated" cards
-      // we need to find its real counterpart
-      switch (item.id) {
-        case "first":
-          rootStore.toggleHabit(rootStore.habits[0].id)
-          break
-        case "last":
-          rootStore.toggleHabit(rootStore.habits[rootStore.habits.length - 1].id)
-          break
-        default:
-          rootStore.toggleHabit(item.id)
-          break
-      }
-    }, COMPLETE_HABIT_TIME)
-  }
+  // const flip = useSharedValue(0)
 
   const $rScale = useAnimatedStyle(() => {
     // Define the range of scroll positions for the previous, current, and next card
-    const inputRange = [
-      (index - 1) * SCREEN_WIDTH,
-      index * SCREEN_WIDTH,
-      (index + 1) * SCREEN_WIDTH,
-    ]
+    const inputRange = [(index - 1) * width, index * width, (index + 1) * width]
 
     // Define the scale values for the previous, current, and next card
     const outputRange = [0.3, 1, 0.3] // Scale is smaller for the previous
@@ -73,19 +56,105 @@ function CardScene(props: CardProps) {
     return { transform: [{ scale }] }
   })
 
+  const rotateX = useSharedValue(0)
+  const rotateY = useSharedValue(0)
+
+  const gesture = Gesture.Pan()
+    .onChange((e) => {
+      rotateY.value += e.changeX / 300
+      rotateX.value -= e.changeY / 300
+    })
+    .onEnd(() => {
+      rotateX.value = withTiming(0)
+      rotateY.value = withTiming(0)
+    })
+
+  const matrix = useDerivedValue(() =>
+    processTransform3d([
+      { translate: [CARD_WIDTH / 2, CARD_HEIGHT / 2] },
+      { perspective: 500 },
+      { rotateX: rotateX.value },
+      { rotateY: rotateY.value },
+      { translate: [-CARD_WIDTH / 2, -CARD_HEIGHT / 2] },
+    ]),
+  )
+
+  const customFontMgr = useFonts({
+    Poetsen: [require("../../../../assets/fonts/PoetsenOne-Regular.ttf")],
+    Quicksand: [
+      quicksandBold,
+      quicksandLight,
+      quicksandMedium,
+      quicksandRegular,
+      quicksandSemiBold,
+    ],
+  })
+
+  const paragraph = useMemo(() => {
+    // Are the custom fonts loaded?
+    if (!customFontMgr) return null
+
+    const titleStyle = {
+      fontSize: 24,
+      fontFamilies: ["Poetsen"],
+      color: Skia.Color(theme.color),
+    }
+
+    const bodyStyle = {
+      fontSize: 16,
+      fontFamilies: ["Quicksand"],
+      color: Skia.Color(colors.text),
+    }
+
+    const paragraphBuilder = Skia.ParagraphBuilder.Make({}, customFontMgr)
+    paragraphBuilder
+      .pushStyle(titleStyle)
+      .addText("Be Inspired!")
+      .pop()
+      .pushStyle(bodyStyle)
+      .addText(
+        "I will read a page every night after getting in bed so that I can become an inspired person.",
+      )
+      .pop()
+      .build()
+
+    return paragraphBuilder.build()
+  }, [customFontMgr])
+
   return (
     <AnimatedImageBackground
       source={theme.image}
       imageStyle={{ borderRadius: cardRadius }}
       style={[$cardEffects, $rScale]}
     >
-      <Pressable style={$cardContainerStyle} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <Back flip={flip} />
+      <GestureDetector gesture={gesture}>
+        <Canvas style={$canvas}>
+          <Group matrix={matrix}>
+            <RoundedRect rect={rrct} x={width / 2} y={height / 2} color="white" />
+            <Paragraph
+              paragraph={paragraph}
+              x={SPACING_LEFT + spacing.md}
+              y={spacing.md}
+              width={CARD_WIDTH}
+            />
+          </Group>
+        </Canvas>
+      </GestureDetector>
+      {/*       <Animated.View pointerEvents="none" style={[$overlay, overlayStyle]}>
         <Front flip={flip} theme={theme} {...props} />
-      </Pressable>
+      </Animated.View> */}
     </AnimatedImageBackground>
   )
 }
+
+export const CARD_WIDTH = width * 0.8
+export const CARD_HEIGHT = CARD_WIDTH * 1.5
+
+const rct = Skia.XYWHRect((width - CARD_WIDTH) / 2, 0, CARD_WIDTH, CARD_HEIGHT)
+const rrct = Skia.RRectXY(rct, 32, 32)
+
+const SPACING_LEFT = (width - CARD_WIDTH) / 2
+const SPACING_TOP = (height - CARD_HEIGHT) / 2
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
 
@@ -93,6 +162,11 @@ export const CardSceneMemo = React.memo(CardScene)
 
 export const $root: ViewStyle = {
   flex: 1,
+}
+
+const $canvas: ViewStyle = {
+  width,
+  height: CARD_HEIGHT + spacing.xxl,
 }
 
 const $cardEffects: ImageStyle = {
@@ -103,11 +177,4 @@ const $cardEffects: ImageStyle = {
   backgroundColor: colors.background,
   borderRadius: cardRadius,
   justifyContent: "center",
-}
-
-const $cardContainerStyle: ViewStyle = {
-  position: "relative",
-  width: SCREEN_WIDTH,
-  alignItems: "center",
-  alignSelf: "center",
 }
