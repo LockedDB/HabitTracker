@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react"
-import { BackHandler, Platform } from "react-native"
 import {
   NavigationState,
   PartialState,
   createNavigationContainerRef,
 } from "@react-navigation/native"
+import { useEffect, useRef, useState } from "react"
+import { BackHandler, Platform } from "react-native"
 import Config from "../config"
 import type { PersistNavigationConfig } from "../config/config.base"
 import { useIsMounted } from "../utils/useIsMounted"
@@ -170,8 +170,10 @@ export function useNavigationPersistence(storage: Storage, persistenceKey: strin
  */
 export function navigate(name: unknown, params?: unknown) {
   if (navigationRef.isReady()) {
-    // @ts-expect-error
-    navigationRef.navigate(name as never, params as never)
+    navigationRef.navigate(
+      name as keyof AppStackParamList,
+      params as AppStackParamList[keyof AppStackParamList],
+    )
   }
 }
 
