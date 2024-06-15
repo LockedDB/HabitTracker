@@ -6,13 +6,19 @@ import {
   Quicksand_600SemiBold as quicksandSemiBold,
 } from "@expo-google-fonts/quicksand"
 import {
+  BlendColor,
   Canvas,
+  FontWeight,
   Group,
+  Image,
   Paragraph,
   RoundedRect,
   Skia,
+  Text,
   processTransform3d,
+  useFont,
   useFonts,
+  useImage,
 } from "@shopify/react-native-skia"
 import { Habit } from "app/models"
 import { themeData } from "app/models/Theme"
@@ -30,7 +36,7 @@ import Animated, {
 } from "react-native-reanimated"
 import { cardRadius } from "./consts"
 
-const { width, height } = Dimensions.get("window")
+const { width } = Dimensions.get("window")
 
 type CardProps = {
   item: Habit
@@ -61,8 +67,8 @@ function CardScene(props: CardProps) {
 
   const gesture = Gesture.Pan()
     .onChange((e) => {
-      rotateY.value += e.changeX / 300
-      rotateX.value -= e.changeY / 300
+      rotateY.value += e.changeX / 1000
+      rotateX.value -= e.changeY / 1000
     })
     .onEnd(() => {
       rotateX.value = withTiming(0)
@@ -76,7 +82,15 @@ function CardScene(props: CardProps) {
       { rotateX: rotateX.value },
       { rotateY: rotateY.value },
       { translate: [-CARD_WIDTH / 2, -CARD_HEIGHT / 2] },
+      // Since there is an offset in the y-axis, we need to move the card down half that offset
+      { translateY: spacing.xxl / 2 },
     ]),
+  )
+
+  // Move the content to the center of the card
+  const contentMatrix = useMemo(
+    () => processTransform3d([{ translate: [0, (CARD_HEIGHT - CARD_WIDTH) / 2] }]),
+    [],
   )
 
   const customFontMgr = useFonts({
@@ -100,6 +114,13 @@ function CardScene(props: CardProps) {
       color: Skia.Color(theme.color),
     }
 
+    const subTitleStyle = {
+      fontSize: 16,
+      fontFamilies: ["Quicksand"],
+      fontStyle: { weight: FontWeight.Bold },
+      color: Skia.Color(colors.text),
+    }
+
     const bodyStyle = {
       fontSize: 16,
       fontFamilies: ["Quicksand"],
@@ -107,18 +128,64 @@ function CardScene(props: CardProps) {
     }
 
     const paragraphBuilder = Skia.ParagraphBuilder.Make({}, customFontMgr)
-    paragraphBuilder
       .pushStyle(titleStyle)
       .addText("Be Inspired!")
       .pop()
       .pushStyle(bodyStyle)
       .addText(
-        "I will read a page every night after getting in bed so that I can become an inspired person.",
+        "\n\nI will read a page every night after getting in bed so that I can become an inspired person.",
       )
+      .pop()
+      .pushStyle(subTitleStyle)
+      .addText("\n\nStreak")
       .pop()
       .build()
 
-    return paragraphBuilder.build()
+    // Call layout to calculate the height of the paragraph
+    paragraphBuilder.layout(CARD_WIDTH)
+
+    return paragraphBuilder
+  }, [customFontMgr])
+
+  const dayFont = useFont(require("../../../../assets/fonts/PoetsenOne-Regular.ttf"), 12)
+
+  const textContainerHeight = paragraph?.getHeight() ?? 0
+
+  const icon = useImage(require("../../../../assets/icons/bling_line.png"), (err) => {
+    console.log("error", err)
+  })
+
+  const STREAK_OFFSET_Y = textContainerHeight + spacing.lg
+  const REWARD_OFFSET_Y = STREAK_OFFSET_Y + 24 + 8 + spacing.xl
+
+  const rewardParagraph = useMemo(() => {
+    // Are the custom fonts loaded?
+    if (!customFontMgr) return null
+
+    const rewardStyle = {
+      fontSize: 16,
+      fontFamilies: ["Quicksand"],
+      fontStyle: { weight: FontWeight.Bold },
+      color: Skia.Color(colors.text),
+    }
+
+    const bodyStyle = {
+      fontSize: 16,
+      fontFamilies: ["Quicksand"],
+      color: Skia.Color(colors.text),
+    }
+
+    const paragraphBuilder = Skia.ParagraphBuilder.Make({}, customFontMgr)
+      .pushStyle(rewardStyle)
+      .addText("Reward")
+      .pop()
+      .pushStyle(bodyStyle)
+      .addText("\n\nI will put 5€ into an account to pay for courses.")
+      .build()
+
+    paragraphBuilder.layout(CARD_WIDTH)
+
+    return paragraphBuilder
   }, [customFontMgr])
 
   return (
@@ -130,19 +197,46 @@ function CardScene(props: CardProps) {
       <GestureDetector gesture={gesture}>
         <Canvas style={$canvas}>
           <Group matrix={matrix}>
-            <RoundedRect rect={rrct} x={width / 2} y={height / 2} color="white" />
-            <Paragraph
-              paragraph={paragraph}
-              x={SPACING_LEFT + spacing.md}
-              y={spacing.md}
-              width={CARD_WIDTH}
-            />
+            <RoundedRect rect={rrct} x={width / 2} y={0} color="white" />
+
+            <Group matrix={contentMatrix}>
+              <Paragraph
+                paragraph={paragraph}
+                x={SPACING_LEFT + spacing.md}
+                y={0}
+                width={CARD_WIDTH - spacing.md}
+              />
+              <Group transform={[{ translateX: SPACING_LEFT }, { translateY: STREAK_OFFSET_Y }]}>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <Image
+                    key={i}
+                    image={icon}
+                    x={spacing.md + i * ((CARD_WIDTH - spacing.md) / 7)}
+                    y={0}
+                    width={24}
+                    height={24}
+                  >
+                    <BlendColor color={theme.color} mode="srcIn" />
+                  </Image>
+                ))}
+                {["M", "T", "W", "T", "F", "S", "S"].map((day, i) => (
+                  <Text
+                    key={i}
+                    text={day}
+                    x={spacing.md + i * ((CARD_WIDTH - spacing.md) / 7) + 7}
+                    y={40}
+                    font={dayFont}
+                  />
+                ))}
+              </Group>
+
+              <Group transform={[{ translateX: SPACING_LEFT }, { translateY: REWARD_OFFSET_Y }]}>
+                <Paragraph paragraph={rewardParagraph} x={spacing.md} y={0} width={CARD_WIDTH} />
+              </Group>
+            </Group>
           </Group>
         </Canvas>
       </GestureDetector>
-      {/*       <Animated.View pointerEvents="none" style={[$overlay, overlayStyle]}>
-        <Front flip={flip} theme={theme} {...props} />
-      </Animated.View> */}
     </AnimatedImageBackground>
   )
 }
@@ -154,7 +248,6 @@ const rct = Skia.XYWHRect((width - CARD_WIDTH) / 2, 0, CARD_WIDTH, CARD_HEIGHT)
 const rrct = Skia.RRectXY(rct, 32, 32)
 
 const SPACING_LEFT = (width - CARD_WIDTH) / 2
-const SPACING_TOP = (height - CARD_HEIGHT) / 2
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
 
