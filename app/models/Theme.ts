@@ -14,16 +14,16 @@ export const themeData = {
     name: "Astro",
     color: colors.palette.astro,
     icon: {
-      active: "blingFill",
-      inactive: "blingLine",
+      active: require("../../assets/icons/bling_fill.png"),
+      inactive: require("../../assets/icons/bling_line.png"),
     },
     image: require("../../assets/images/astronauts.png"),
   },
   [HabitTheme.Sport]: {
     name: "Sport",
     icon: {
-      active: "barbellFill",
-      inactive: "barbellLine",
+      active: require("../../assets/icons/barbell_fill.png"),
+      inactive: require("../../assets/icons/barbell.png"),
     },
     color: colors.palette.sport,
     image: require("../../assets/images/dumbbells.png"),
