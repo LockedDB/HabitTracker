@@ -36,7 +36,7 @@ type CardProps = {
   selectedIndex: SharedValue<number>
 }
 
-function CardScene(props: CardProps) {
+function _CardScene(props: CardProps) {
   const { item, index, scrollX } = props
   const theme: Theme = themeData[item.theme]
   const headerHeight = useAtomValue(headerSectionParagraphHeight)
@@ -97,7 +97,7 @@ function CardScene(props: CardProps) {
       <GestureDetector gesture={gesture}>
         <Canvas style={$canvas}>
           <Group matrix={rotationMatrix}>
-            <CardBackground />
+            <CardBackground backgroundImage={theme.image} />
             <Group matrix={contentMatrix}>
               <HeaderSection
                 x={SPACING_LEFT}
@@ -129,7 +129,7 @@ const SPACING_LEFT = (width - CARD_WIDTH) / 2 + spacing.md
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
 
-export const CardSceneMemo = React.memo(CardScene)
+export const CardScene = React.memo(_CardScene)
 
 export const $root: ViewStyle = {
   flex: 1,

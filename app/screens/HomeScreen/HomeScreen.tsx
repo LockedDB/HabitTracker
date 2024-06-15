@@ -11,7 +11,7 @@ import Animated, {
   useAnimatedScrollHandler,
   useSharedValue,
 } from "react-native-reanimated"
-import { $root, CardSceneMemo } from "./components/CardScene"
+import { $root, CardScene } from "./components/CardScene"
 
 interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
 
@@ -96,7 +96,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         data={data}
         contentOffset={{ x: screenWidth, y: 0 }}
         renderItem={({ item, index }) => (
-          <CardSceneMemo
+          <CardScene
             selectedIndex={currentTab}
             item={item}
             index={index}

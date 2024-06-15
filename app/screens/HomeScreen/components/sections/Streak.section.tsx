@@ -5,7 +5,7 @@ import withGroupTransform from "app/utils/skia/withGroupTransform"
 import React from "react"
 import { CARD_WIDTH } from "../CardScene"
 
-interface Props {
+type Props = {
   themeColor: string
   themeIcon: Theme["icon"]
 }

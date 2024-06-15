@@ -5,7 +5,7 @@ import { atom, useSetAtom } from "jotai"
 import React, { useMemo } from "react"
 import { CARD_WIDTH } from "../CardScene"
 
-interface Props {
+type Props = {
   customFontMgr: SkTypefaceFontProvider | null
   themeColor: string
 }
@@ -19,7 +19,7 @@ function _HeaderSection({ customFontMgr, themeColor }: Props) {
     if (!customFontMgr) return null
 
     const bodyStyle = {
-      fontSize: 16,
+      fontSize: 14,
       fontFamilies: ["Quicksand"],
       color: Skia.Color(colors.text),
     }
@@ -32,7 +32,7 @@ function _HeaderSection({ customFontMgr, themeColor }: Props) {
       .build()
 
     // Call layout to calculate the height of the paragraph
-    paragraphBuilder.layout(CARD_WIDTH)
+    paragraphBuilder.layout(CARD_WIDTH - spacing.md * 2)
 
     setHeight(paragraphBuilder.getHeight() + titleSize + spacing.xs)
 
@@ -42,7 +42,7 @@ function _HeaderSection({ customFontMgr, themeColor }: Props) {
   return (
     <>
       <Text font={titleFont} text={"Be Inspired!"} color={themeColor} />
-      <Paragraph paragraph={paragraph} x={0} y={spacing.xs} width={CARD_WIDTH - spacing.md} />
+      <Paragraph paragraph={paragraph} x={0} y={spacing.xs} width={CARD_WIDTH - spacing.md * 2} />
     </>
   )
 }
