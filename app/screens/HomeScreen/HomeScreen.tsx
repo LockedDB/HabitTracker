@@ -4,6 +4,7 @@ import { useMountEffect } from "app/utils/useMountEffect"
 import { observer } from "mobx-react-lite"
 
 import { themeData } from "app/models/Theme"
+import { spacing } from "app/theme"
 import React, { FC, useRef, useState } from "react"
 import { FlatList, ImageSourcePropType, View, useWindowDimensions } from "react-native"
 import Animated, {
@@ -31,8 +32,6 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   // Normalized scroll value, goes from 0 to 1
   const scrollXNormalized = useSharedValue(0)
 
-  const isPressing = useSharedValue(false)
-
   // Current tab being displayed, changes when the user scrolls halfway through the screen
   const currentTab = useSharedValue(1)
 
@@ -43,7 +42,10 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
 
   // Scroll to beggining or end of the list
   const scrollToOffset = (index: number) => {
-    listRef.current?.scrollToOffset({ offset: index * screenWidth, animated: false })
+    listRef.current?.scrollToOffset({
+      offset: index * screenWidth + index * spacingBetweenCards,
+      animated: false,
+    })
   }
 
   const scrollHandler = useAnimatedScrollHandler({
@@ -94,24 +96,25 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
       <Animated.FlatList
         ref={listRef}
         data={data}
-        contentOffset={{ x: screenWidth, y: 0 }}
-        renderItem={({ item, index }) => (
-          <CardScene
-            selectedIndex={currentTab}
-            item={item}
-            index={index}
-            scrollX={scrollX}
-            pressing={isPressing}
-          />
-        )}
+        contentOffset={{ x: screenWidth + spacingBetweenCards, y: 0 }}
+        renderItem={({ item }) => <CardScene item={item} />}
         horizontal
         keyExtractor={(item) => item.id}
         scrollEventThrottle={16}
         onScroll={scrollHandler}
-        pagingEnabled
+        snapToOffsets={data.map((_, index) => index * screenWidth + index * spacingBetweenCards)}
+        decelerationRate="fast"
+        getItemLayout={(_, index) => ({
+          length: screenWidth,
+          offset: screenWidth * index + spacing.md,
+          index,
+        })}
+        ItemSeparatorComponent={() => <View style={{ width: spacingBetweenCards }} />}
         style={{ height: screenHeight }}
         showsHorizontalScrollIndicator={false}
       />
     </View>
   )
 })
+
+const spacingBetweenCards = spacing.xl

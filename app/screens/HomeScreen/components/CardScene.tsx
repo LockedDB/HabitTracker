@@ -6,14 +6,7 @@ import { useAtomValue } from "jotai"
 import React, { useMemo } from "react"
 import { Dimensions, ImageBackground, ImageStyle, ViewStyle } from "react-native"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import Animated, {
-  SharedValue,
-  interpolate,
-  useAnimatedStyle,
-  useDerivedValue,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated"
+import Animated, { useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated"
 import { CardBackground } from "./CardBackground"
 import { cardRadius } from "./consts"
 import { HeaderSection, headerSectionParagraphHeight } from "./sections/Header.section"
@@ -30,26 +23,12 @@ const allFonts = {
 
 type CardProps = {
   item: Habit
-  index: number
-  scrollX: SharedValue<number>
-  pressing: SharedValue<boolean>
-  selectedIndex: SharedValue<number>
 }
 
 function _CardScene(props: CardProps) {
-  const { item, index, scrollX } = props
+  const { item } = props
   const theme: Theme = themeData[item.theme]
   const headerHeight = useAtomValue(headerSectionParagraphHeight)
-
-  const $rScale = useAnimatedStyle(() => {
-    // Define the range of scroll positions for the previous, current, and next card
-    const inputRange = [(index - 1) * width, index * width, (index + 1) * width]
-
-    // Define the scale values for the previous, current, and next card
-    const outputRange = [0.3, 1, 0.3] // Scale is smaller for the previous
-    const scale = interpolate(scrollX.value, inputRange, outputRange)
-    return { transform: [{ scale }] }
-  })
 
   const rotateX = useSharedValue(0)
   const rotateY = useSharedValue(0)
@@ -92,7 +71,7 @@ function _CardScene(props: CardProps) {
     <AnimatedImageBackground
       source={theme.image}
       imageStyle={{ borderRadius: cardRadius }}
-      style={[$cardEffects, $rScale]}
+      style={$cardEffects}
     >
       <GestureDetector gesture={gesture}>
         <Canvas style={$canvas}>
