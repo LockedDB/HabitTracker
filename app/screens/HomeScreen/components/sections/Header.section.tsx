@@ -1,4 +1,5 @@
 import { Paragraph, SkTypefaceFontProvider, Skia, Text, useFont } from "@shopify/react-native-skia"
+import { Habit } from "app/models"
 import { colors, customFontsToLoad, spacing } from "app/theme"
 import withGroupTransform from "app/utils/skia/withGroupTransform"
 import { atom, useSetAtom } from "jotai"
@@ -8,9 +9,10 @@ import { CARD_WIDTH } from "../CardScene"
 type Props = {
   customFontMgr: SkTypefaceFontProvider | null
   themeColor: string
+  habit: Pick<Habit, "name" | "description">
 }
 
-function _HeaderSection({ customFontMgr, themeColor }: Props) {
+function _HeaderSection({ customFontMgr, themeColor, habit: { name, description } }: Props) {
   const titleFont = useFont(customFontsToLoad.PoetsenOne, titleSize)
   const setHeight = useSetAtom(headerSectionParagraphHeight)
 
@@ -26,9 +28,7 @@ function _HeaderSection({ customFontMgr, themeColor }: Props) {
 
     const paragraphBuilder = Skia.ParagraphBuilder.Make({}, customFontMgr)
       .pushStyle(bodyStyle)
-      .addText(
-        "I will read a page every night after getting in bed so that I can become an inspired person.",
-      )
+      .addText(description)
       .build()
 
     // Call layout to calculate the height of the paragraph
@@ -41,8 +41,8 @@ function _HeaderSection({ customFontMgr, themeColor }: Props) {
 
   return (
     <>
-      <Text font={titleFont} text={"Be Inspired!"} color={themeColor} />
-      <Paragraph paragraph={paragraph} x={0} y={spacing.xs} width={CARD_WIDTH - spacing.md * 2} />
+      <Text font={titleFont} text={name} color={themeColor} />
+      <Paragraph paragraph={paragraph} x={0} y={spacing.sm} width={CARD_WIDTH - spacing.md * 2} />
     </>
   )
 }

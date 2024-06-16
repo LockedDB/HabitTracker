@@ -36,7 +36,7 @@ function _StreakSection({ themeColor, themeIcon }: Props) {
         <Text
           key={i}
           text={day}
-          x={i * ((CARD_WIDTH - spacing.md) / 7) + 7}
+          x={i * ((CARD_WIDTH - spacing.md) / 7) + 8}
           y={16 + 24 + spacing.md}
           font={dayFont}
         />

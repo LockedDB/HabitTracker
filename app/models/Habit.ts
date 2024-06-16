@@ -9,6 +9,8 @@ export const HabitModel = types
   .props({
     id: types.optional(types.identifier, () => generateUUID()),
     name: types.string,
+    description: types.string,
+    reward: types.optional(types.string, ""),
     dates: types.optional(types.array(types.Date), []),
     streak: types.optional(types.number, 0),
     theme: types.optional(types.enumeration(Object.values(HabitTheme)), HabitTheme.Astro),
@@ -38,8 +40,9 @@ export interface HabitSnapshotOut extends SnapshotOut<typeof HabitModel> {}
 export interface HabitSnapshotIn extends SnapshotIn<typeof HabitModel> {}
 export const createHabitDefaultModel = () =>
   types.optional(HabitModel, {
-    id: "0",
     name: "",
+    description: "",
     streak: 0,
+    reward: "",
     dates: [],
   })

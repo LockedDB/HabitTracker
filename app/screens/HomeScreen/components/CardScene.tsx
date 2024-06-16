@@ -104,6 +104,7 @@ function _CardScene(props: CardProps) {
                 y={spacing.lg}
                 customFontMgr={customFontMgr}
                 themeColor={theme.color}
+                habit={{ ...item }}
               />
 
               <StreakSection

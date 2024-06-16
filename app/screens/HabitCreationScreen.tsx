@@ -16,6 +16,7 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
       navigation: { goBack },
     } = _props
     const rootStore = useStores()
+    const [title, setTitle] = useState("")
     const [habit, setHabit] = useState("")
     const [when, setWhen] = useState("")
     const [identity, setIdentity] = useState("")
@@ -29,11 +30,12 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
 
     const createHabit = useCallback(() => {
       rootStore.addHabit({
-        name: `I will ${habit} every ${when} so that I can become ${identity}`,
+        name: title,
+        description: `I will ${habit} every ${when} so that I can become ${identity}`,
         theme,
       })
       goBack()
-    }, [habit, when, identity, theme])
+    }, [habit, when, identity, theme, habit, title])
 
     return (
       <Screen
@@ -45,6 +47,13 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
       >
         <View />
         <View style={$fieldsContainer}>
+          <TextField
+            value={title}
+            placeholder="New habit"
+            label="Title"
+            autoCapitalize="none"
+            onChangeText={(value) => setTitle(value)}
+          />
           <TextField
             value={habit}
             placeholder="put on my gym clothes"
@@ -73,7 +82,11 @@ export const HabitCreationScreen: FC<HabitCreationScreenProps> = observer(
             Sport
           </Button>
         </View>
-        <Button disabled={!habit} preset={!habit ? "filled" : "reversed"} onPress={createHabit}>
+        <Button
+          disabled={!habit || !title}
+          preset={!habit ? "filled" : "reversed"}
+          onPress={createHabit}
+        >
           New habit
         </Button>
       </Screen>
