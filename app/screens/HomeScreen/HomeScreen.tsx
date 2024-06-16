@@ -43,7 +43,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   // Scroll to beggining or end of the list
   const scrollToOffset = (index: number) => {
     listRef.current?.scrollToOffset({
-      offset: index * screenWidth + index * spacingBetweenCards,
+      offset: index * screenWidth + index * SPACING_CARDS,
       animated: false,
     })
   }
@@ -96,20 +96,21 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
       <Animated.FlatList
         ref={listRef}
         data={data}
-        contentOffset={{ x: screenWidth + spacingBetweenCards, y: 0 }}
+        contentOffset={{ x: screenWidth + SPACING_CARDS, y: 0 }}
         renderItem={({ item }) => <CardScene item={item} />}
         horizontal
         keyExtractor={(item) => item.id}
         scrollEventThrottle={16}
         onScroll={scrollHandler}
-        snapToOffsets={data.map((_, index) => index * screenWidth + index * spacingBetweenCards)}
+        snapToOffsets={data.map((_, index) => index * screenWidth + index * SPACING_CARDS)}
         decelerationRate="fast"
+        disableIntervalMomentum
         getItemLayout={(_, index) => ({
           length: screenWidth,
           offset: screenWidth * index + spacing.md,
           index,
         })}
-        ItemSeparatorComponent={() => <View style={{ width: spacingBetweenCards }} />}
+        ItemSeparatorComponent={() => <View style={{ width: SPACING_CARDS }} />}
         style={{ height: screenHeight }}
         showsHorizontalScrollIndicator={false}
       />
@@ -117,4 +118,4 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   )
 })
 
-const spacingBetweenCards = spacing.xl
+const SPACING_CARDS = spacing.xl
