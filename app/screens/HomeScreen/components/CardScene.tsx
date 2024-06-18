@@ -2,18 +2,18 @@ import { Canvas, Group, processTransform3d, useFonts } from "@shopify/react-nati
 import { Habit } from "app/models"
 import { Theme, themeData } from "app/models/Theme"
 import { colors, customFontsToLoad, spacing } from "app/theme"
-import { useAtomValue } from "jotai"
-import React, { useMemo } from "react"
+import { atom, useAtomValue } from "jotai"
+import React from "react"
 import { Dimensions, ImageBackground, ImageStyle, ViewStyle } from "react-native"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, { useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated"
 import { CardBackground } from "./CardBackground"
 import { cardRadius } from "./consts"
 import { HeaderSection, headerSectionParagraphHeight } from "./sections/Header.section"
-import { RewardSection } from "./sections/Reward.section"
+import { RewardSection, rewardSectionHeight } from "./sections/Reward.section"
 import { StreakSection } from "./sections/Streak.section"
 
-const { width } = Dimensions.get("window")
+const { width, height } = Dimensions.get("window")
 
 const { PoetsenOne, ...quicksandFonts } = customFontsToLoad
 const allFonts = {
@@ -29,6 +29,7 @@ function _CardScene(props: CardProps) {
   const { item } = props
   const theme: Theme = themeData[item.theme]
   const headerHeight = useAtomValue(headerSectionParagraphHeight)
+  const contentHeightValue = useAtomValue(contentHeight)
 
   const rotateX = useSharedValue(0)
   const rotateY = useSharedValue(0)
@@ -55,11 +56,14 @@ function _CardScene(props: CardProps) {
     ]),
   )
 
-  // Move the content to the center of the card
-  const contentMatrix = useMemo(
-    () =>
-      processTransform3d([{ translate: [0, (CARD_HEIGHT - CARD_WIDTH) / 2 + spacing.xxl / 2] }]),
-    [],
+  const contentRotation = useDerivedValue(() =>
+    processTransform3d([
+      { translate: [CARD_WIDTH / 2, contentHeightValue / 2] },
+      { perspective: 500 },
+      { rotateY: rotateY.value },
+      { rotateX: rotateX.value },
+      { translate: [-CARD_WIDTH / 2, -contentHeightValue / 2] },
+    ])
   )
 
   const customFontMgr = useFonts(allFonts)
@@ -77,35 +81,47 @@ function _CardScene(props: CardProps) {
         <Canvas style={$canvas}>
           <Group matrix={rotationMatrix}>
             <CardBackground backgroundImage={theme.image} />
-            <Group matrix={contentMatrix}>
-              <HeaderSection
-                x={SPACING_LEFT}
-                y={spacing.lg}
-                customFontMgr={customFontMgr}
-                themeColor={theme.color}
-                habit={{ ...item }}
-              />
-
-              <StreakSection
-                x={SPACING_LEFT}
-                y={STREAK_OFFSET_Y}
-                themeColor={theme.color}
-                themeIcon={theme.icon}
-              />
-
-              <RewardSection x={SPACING_LEFT} y={REWARD_OFFSET_Y} customFontMgr={customFontMgr} />
-            </Group>
           </Group>
         </Canvas>
       </GestureDetector>
-    </AnimatedImageBackground>
+
+      <Canvas style={[$content, {
+        height: contentHeightValue,
+        top: (height - contentHeightValue) / 2
+      }]}>
+        <Group matrix={contentRotation}>
+          <HeaderSection
+            x={spacing.md}
+            y={spacing.lg}
+            customFontMgr={customFontMgr}
+            themeColor={theme.color}
+            habit={{ ...item }}
+          />
+
+          <StreakSection
+            x={spacing.md}
+            y={STREAK_OFFSET_Y}
+            themeColor={theme.color}
+            themeIcon={theme.icon}
+          />
+
+          {item.reward && (
+            <RewardSection x={spacing.md} y={REWARD_OFFSET_Y} customFontMgr={customFontMgr} />
+          )}
+        </Group>
+      </Canvas>
+    </AnimatedImageBackground >
   )
 }
 
+const streakHeight = spacing.lg + 64 + spacing.xl
+
+const contentHeight = atom(
+  (get) => get(headerSectionParagraphHeight) + streakHeight + get(rewardSectionHeight),
+)
+
 export const CARD_WIDTH = width * 0.8
 export const CARD_HEIGHT = CARD_WIDTH * 1.5
-
-const SPACING_LEFT = (width - CARD_WIDTH) / 2 + spacing.md
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
 
@@ -128,4 +144,11 @@ const $cardEffects: ImageStyle = {
   backgroundColor: colors.background,
   borderRadius: cardRadius,
   justifyContent: "center",
+  position: 'relative'
+}
+
+const $content: ViewStyle = {
+  position: 'absolute',
+  width: CARD_WIDTH,
+  left: (width - CARD_WIDTH) / 2,
 }

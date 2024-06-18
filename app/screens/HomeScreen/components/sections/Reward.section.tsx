@@ -1,6 +1,7 @@
 import { Paragraph, SkTypefaceFontProvider, Skia, Text, useFont } from "@shopify/react-native-skia"
 import { colors, customFontsToLoad, spacing } from "app/theme"
 import withGroupTransform from "app/utils/skia/withGroupTransform"
+import { atom, useSetAtom } from "jotai"
 import React, { useMemo } from "react"
 import { CARD_WIDTH } from "../CardScene"
 
@@ -10,6 +11,7 @@ type Props = {
 
 function _RewardSection({ customFontMgr }: Props) {
   const titleFont = useFont(customFontsToLoad.quicksandBold, 16)
+  const setHeight = useSetAtom(rewardSectionHeight)
 
   const rewardParagraph = useMemo(() => {
     // Are the custom fonts loaded?
@@ -28,15 +30,24 @@ function _RewardSection({ customFontMgr }: Props) {
 
     paragraphBuilder.layout(CARD_WIDTH - spacing.md * 2)
 
+    setHeight(paragraphBuilder.getHeight() + 16 + spacing.md)
+
     return paragraphBuilder
   }, [customFontMgr])
 
   return (
     <>
       <Text text="Reward" font={titleFont} x={0} />
-      <Paragraph paragraph={rewardParagraph} x={0} y={16} width={CARD_WIDTH - spacing.md * 2} />
+      <Paragraph
+        paragraph={rewardParagraph}
+        x={0}
+        y={spacing.md}
+        width={CARD_WIDTH - spacing.md * 2}
+      />
     </>
   )
 }
+
+export const rewardSectionHeight = atom(0)
 
 export const RewardSection = withGroupTransform(React.memo(_RewardSection))
