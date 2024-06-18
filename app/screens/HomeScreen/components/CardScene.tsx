@@ -3,7 +3,7 @@ import { Habit } from "app/models"
 import { Theme, themeData } from "app/models/Theme"
 import { colors, customFontsToLoad, spacing } from "app/theme"
 import { atom, useAtomValue } from "jotai"
-import React from "react"
+import React, { useMemo } from "react"
 import { Dimensions, ImageBackground, ImageStyle, ViewStyle } from "react-native"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, { useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated"
@@ -25,7 +25,7 @@ type CardProps = {
   item: Habit
 }
 
-function _CardScene(props: CardProps) {
+function CardSceneComponent(props: CardProps) {
   const { item } = props
   const theme: Theme = themeData[item.theme]
   const headerHeight = useAtomValue(headerSectionParagraphHeight)
@@ -34,7 +34,7 @@ function _CardScene(props: CardProps) {
   const rotateX = useSharedValue(0)
   const rotateY = useSharedValue(0)
 
-  const gesture = Gesture.Pan()
+  const panGesture = Gesture.Pan()
     .onChange((e) => {
       rotateY.value += e.changeX / 1000
       rotateX.value -= e.changeY / 1000
@@ -68,8 +68,8 @@ function _CardScene(props: CardProps) {
 
   const customFontMgr = useFonts(allFonts)
 
-  const STREAK_OFFSET_Y = headerHeight + spacing.lg
-  const REWARD_OFFSET_Y = STREAK_OFFSET_Y + 24 + 16 + spacing.xxl
+  const streakOffsetY = useMemo(() => headerHeight + spacing.lg, [headerHeight])
+  const rewardOffsetY = useMemo(() => streakOffsetY + 24 + 16 + spacing.xxl, [streakOffsetY])
 
   return (
     <AnimatedImageBackground
@@ -77,7 +77,7 @@ function _CardScene(props: CardProps) {
       imageStyle={{ borderRadius: cardRadius }}
       style={$cardEffects}
     >
-      <GestureDetector gesture={gesture}>
+      <GestureDetector gesture={panGesture}>
         <Canvas style={$canvas}>
           <Group matrix={rotationMatrix}>
             <CardBackground backgroundImage={theme.image} />
@@ -103,13 +103,13 @@ function _CardScene(props: CardProps) {
 
           <StreakSection
             x={spacing.md}
-            y={STREAK_OFFSET_Y}
+            y={streakOffsetY}
             themeColor={theme.color}
             themeIcon={theme.icon}
           />
 
           {item.reward && (
-            <RewardSection x={spacing.md} y={REWARD_OFFSET_Y} customFontMgr={customFontMgr} />
+            <RewardSection x={spacing.md} y={rewardOffsetY} customFontMgr={customFontMgr} />
           )}
         </Group>
       </Canvas>
@@ -117,10 +117,10 @@ function _CardScene(props: CardProps) {
   )
 }
 
-const streakHeight = spacing.lg + 64 + spacing.xl
+const STREAK_CALC_HEIGHT = spacing.lg + 64 + spacing.xl
 
 const contentHeight = atom(
-  (get) => get(headerSectionParagraphHeight) + streakHeight + get(rewardSectionHeight),
+  (get) => get(headerSectionParagraphHeight) + STREAK_CALC_HEIGHT + get(rewardSectionHeight),
 )
 
 export const CARD_WIDTH = width * 0.8
@@ -128,7 +128,7 @@ export const CARD_HEIGHT = CARD_WIDTH * 1.5
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
 
-export const CardScene = React.memo(_CardScene)
+export const CardScene = React.memo(CardSceneComponent)
 
 export const $root: ViewStyle = {
   flex: 1,
