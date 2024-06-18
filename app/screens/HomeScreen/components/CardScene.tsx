@@ -85,10 +85,13 @@ function _CardScene(props: CardProps) {
         </Canvas>
       </GestureDetector>
 
-      <Canvas style={[$content, {
-        height: contentHeightValue,
-        top: (height - contentHeightValue) / 2
-      }]}>
+      <Canvas
+        pointerEvents="none"
+        style={[$content, {
+          height: contentHeightValue,
+          top: (height - contentHeightValue) / 2
+        }]}
+      >
         <Group matrix={contentRotation}>
           <HeaderSection
             x={spacing.md}
