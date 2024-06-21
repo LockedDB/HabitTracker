@@ -2,7 +2,6 @@ import { Paragraph, SkTypefaceFontProvider, Skia, Text, useFont } from "@shopify
 import { Habit } from "app/models"
 import { colors, customFontsToLoad, spacing } from "app/theme"
 import withGroupTransform from "app/utils/skia/withGroupTransform"
-import { atom, useSetAtom } from "jotai"
 import React, { useMemo } from "react"
 import { CARD_WIDTH } from "../CardScene"
 
@@ -10,11 +9,11 @@ type Props = {
   customFontMgr: SkTypefaceFontProvider | null
   themeColor: string
   habit: Pick<Habit, "name" | "description">
+  setHeight: (height: number) => void
 }
 
-function _HeaderSection({ customFontMgr, themeColor, habit: { name, description } }: Props) {
+function _HeaderSection({ customFontMgr, themeColor, habit: { name, description }, setHeight }: Props) {
   const titleFont = useFont(customFontsToLoad.PoetsenOne, titleSize)
-  const setHeight = useSetAtom(headerSectionParagraphHeight)
 
   const paragraph = useMemo(() => {
     // Are the custom fonts loaded?
@@ -49,6 +48,5 @@ function _HeaderSection({ customFontMgr, themeColor, habit: { name, description 
 
 export const HeaderSection = withGroupTransform(React.memo(_HeaderSection))
 
-export const headerSectionParagraphHeight = atom(0)
 
 const titleSize = 24

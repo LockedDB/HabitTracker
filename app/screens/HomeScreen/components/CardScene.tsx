@@ -2,15 +2,14 @@ import { Canvas, Group, processTransform3d, useFonts } from "@shopify/react-nati
 import { Habit } from "app/models"
 import { Theme, themeData } from "app/models/Theme"
 import { colors, customFontsToLoad, spacing } from "app/theme"
-import { atom, useAtomValue } from "jotai"
-import React, { useMemo } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { Dimensions, ImageBackground, ImageStyle, ViewStyle } from "react-native"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, { useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated"
 import { CardBackground } from "./CardBackground"
 import { cardRadius } from "./consts"
-import { HeaderSection, headerSectionParagraphHeight } from "./sections/Header.section"
-import { RewardSection, rewardSectionHeight } from "./sections/Reward.section"
+import { HeaderSection } from "./sections/Header.section"
+import { RewardSection } from "./sections/Reward.section"
 import { StreakSection } from "./sections/Streak.section"
 
 const { width, height } = Dimensions.get("window")
@@ -28,8 +27,14 @@ type CardProps = {
 function CardSceneComponent(props: CardProps) {
   const { item } = props
   const theme: Theme = themeData[item.theme]
-  const headerHeight = useAtomValue(headerSectionParagraphHeight)
-  const contentHeightValue = useAtomValue(contentHeight)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const [rewardHeight, setRewardHeight] = useState(0)
+  const [contentHeight, setContentHeight] = useState(0)
+
+  useEffect(() => {
+    if (headerHeight === 0) return
+    setContentHeight(headerHeight + STREAK_CALC_HEIGHT + rewardHeight)
+  }, [headerHeight, rewardHeight])
 
   const rotateX = useSharedValue(0)
   const rotateY = useSharedValue(0)
@@ -58,11 +63,11 @@ function CardSceneComponent(props: CardProps) {
 
   const contentRotation = useDerivedValue(() =>
     processTransform3d([
-      { translate: [CARD_WIDTH / 2, contentHeightValue / 2] },
+      { translate: [CARD_WIDTH / 2, contentHeight / 2] },
       { perspective: 500 },
       { rotateY: rotateY.value },
       { rotateX: rotateX.value },
-      { translate: [-CARD_WIDTH / 2, -contentHeightValue / 2] },
+      { translate: [-CARD_WIDTH / 2, -contentHeight / 2] },
     ])
   )
 
@@ -88,12 +93,13 @@ function CardSceneComponent(props: CardProps) {
       <Canvas
         pointerEvents="none"
         style={[$content, {
-          height: contentHeightValue,
-          top: (height - contentHeightValue) / 2
+          height: contentHeight,
+          top: (height - contentHeight) / 2
         }]}
       >
         <Group matrix={contentRotation}>
           <HeaderSection
+            setHeight={setHeaderHeight}
             x={spacing.md}
             y={spacing.lg}
             customFontMgr={customFontMgr}
@@ -109,7 +115,7 @@ function CardSceneComponent(props: CardProps) {
           />
 
           {item.reward && (
-            <RewardSection x={spacing.md} y={rewardOffsetY} customFontMgr={customFontMgr} />
+            <RewardSection setHeight={setRewardHeight} x={spacing.md} y={rewardOffsetY} customFontMgr={customFontMgr} />
           )}
         </Group>
       </Canvas>
@@ -117,17 +123,12 @@ function CardSceneComponent(props: CardProps) {
   )
 }
 
-const STREAK_CALC_HEIGHT = spacing.lg + 64 + spacing.xl
-
-const contentHeight = atom(
-  (get) => get(headerSectionParagraphHeight) + STREAK_CALC_HEIGHT + get(rewardSectionHeight),
-)
+export const STREAK_CALC_HEIGHT = spacing.lg + 64 + spacing.xl
 
 export const CARD_WIDTH = width * 0.8
 export const CARD_HEIGHT = CARD_WIDTH * 1.5
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
-
 export const CardScene = React.memo(CardSceneComponent)
 
 export const $root: ViewStyle = {
