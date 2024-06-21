@@ -112,12 +112,14 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
           offset: screenWidth * index + spacing.md,
           index,
         })}
-        ItemSeparatorComponent={() => <View style={{ width: SPACING_CARDS }} />}
+        ItemSeparatorComponent={Separator}
         style={{ height: screenHeight }}
         showsHorizontalScrollIndicator={false}
       />
     </View>
   )
 })
+
+const Separator = () => <View style={{ width: SPACING_CARDS }} />
 
 const SPACING_CARDS = spacing.xl
