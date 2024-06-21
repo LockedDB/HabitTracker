@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated"
 import { $root, CardScene } from "./components/CardScene"
 
-interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
+interface HomeScreenProps extends AppStackScreenProps<"Home"> { }
 
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions()
@@ -54,7 +54,9 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
 
       scrollXNormalized.value = (event.contentOffset.x % screenWidth) / screenWidth
 
-      currentTab.value = Math.round(scrollX.value / screenWidth)
+      // Ensure the current tab is between 1 and the number of habits, if there is a delay in the jumpTo
+      // the current tab will try to access an index that doesn't exist, so we need to limit it
+      currentTab.value = Math.max(1, Math.min(Math.round(scrollX.value / screenWidth), habits.length))
 
       const newImage: ImageSourcePropType = themeData[data[currentTab.value].theme].image
       if (newImage !== bgImage) {
