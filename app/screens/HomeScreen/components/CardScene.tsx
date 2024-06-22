@@ -5,7 +5,13 @@ import { colors, customFontsToLoad, spacing } from "app/theme"
 import React, { useEffect, useMemo, useState } from "react"
 import { Dimensions, ImageBackground, ImageStyle, ViewStyle } from "react-native"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import Animated, { useDerivedValue, useSharedValue, withTiming } from "react-native-reanimated"
+import Animated, {
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated"
 import { CardBackground } from "./CardBackground"
 import { cardRadius } from "./consts"
 import { HeaderSection } from "./sections/Header.section"
@@ -31,31 +37,49 @@ function CardSceneComponent(props: CardProps) {
   const [rewardHeight, setRewardHeight] = useState(0)
   const [contentHeight, setContentHeight] = useState(0)
 
-  useEffect(() => {
-    if (headerHeight === 0) return
-    setContentHeight(headerHeight + STREAK_CALC_HEIGHT + rewardHeight)
-  }, [headerHeight, rewardHeight])
-
   const rotateX = useSharedValue(0)
   const rotateY = useSharedValue(0)
+  const currentRotation = useSharedValue(0)
 
   const panGesture = Gesture.Pan()
     .onChange((e) => {
       rotateY.value += e.changeX / 1000
       rotateX.value -= e.changeY / 1000
     })
-    .onEnd(() => {
-      rotateX.value = withTiming(0)
-      rotateY.value = withTiming(0)
+    .onEnd((e) => {
+      const isSignificantTranslation = Math.abs(e.velocityX) > 350
+      if (isSignificantTranslation) {
+        const direction = e.translationX > 0 ? 1 : -1
+        currentRotation.value += direction * Math.PI
+        rotateY.value = withSpring(currentRotation.value, { duration: 1000 }, () => {
+          // If the rotation wants to go past the thresold let's reset it
+          if (Math.abs(currentRotation.value) === Math.PI * 2) {
+            rotateY.value = 0
+            currentRotation.value = 0
+          }
+        })
+      } else {
+        rotateX.value = withTiming(0)
+        rotateY.value = withTiming(0)
+      }
     })
+
+  const isDisplayingBack = useDerivedValue(() => {
+    const absRotate = Math.abs(rotateY.value)
+    if (absRotate > Math.PI / 2 && absRotate < (3 * Math.PI) / 2) {
+      return true
+    }
+    return false
+  })
+
 
   const rotationMatrix = useDerivedValue(() =>
     processTransform3d([
-      { translate: [CARD_WIDTH / 2, CARD_HEIGHT / 2] },
+      { translate: [CENTER_X, CENTER_Y] },
       { perspective: 500 },
       { rotateX: rotateX.value },
       { rotateY: rotateY.value },
-      { translate: [-CARD_WIDTH / 2, -CARD_HEIGHT / 2] },
+      { translate: [-CENTER_X, -CENTER_Y] },
       // Since there is an offset in the y-axis, we need to move the card down half that offset
       { translateY: spacing.xxl / 2 },
     ]),
@@ -67,14 +91,23 @@ function CardSceneComponent(props: CardProps) {
       { perspective: 500 },
       { rotateY: rotateY.value },
       { rotateX: rotateX.value },
-      { translate: [-CARD_WIDTH / 2, -contentHeight / 2] },
-    ])
+      { translate: [-(CARD_WIDTH / 2), -contentHeight / 2] },
+    ]),
   )
 
   const customFontMgr = useFonts(allFonts)
 
   const streakOffsetY = useMemo(() => headerHeight + spacing.lg, [headerHeight])
   const rewardOffsetY = useMemo(() => streakOffsetY + 24 + 16 + spacing.xxl, [streakOffsetY])
+
+  const $flippedStyle = useAnimatedStyle(() => ({
+    opacity: isDisplayingBack.value ? 0 : 1,
+  }))
+
+  useEffect(() => {
+    if (headerHeight === 0) return
+    setContentHeight(headerHeight + STREAK_CALC_HEIGHT + rewardHeight)
+  }, [headerHeight, rewardHeight])
 
   return (
     <AnimatedImageBackground
@@ -90,12 +123,16 @@ function CardSceneComponent(props: CardProps) {
         </Canvas>
       </GestureDetector>
 
-      <Canvas
+      <AnimatedCanvas
         pointerEvents="none"
-        style={[$content, {
-          height: contentHeight,
-          top: (height - contentHeight) / 2
-        }]}
+        style={[
+          $content,
+          $flippedStyle,
+          {
+            height: contentHeight,
+            top: (height - contentHeight) / 2,
+          },
+        ]}
       >
         <Group matrix={contentRotation}>
           <HeaderSection
@@ -115,11 +152,16 @@ function CardSceneComponent(props: CardProps) {
           />
 
           {item.reward && (
-            <RewardSection setHeight={setRewardHeight} x={spacing.md} y={rewardOffsetY} customFontMgr={customFontMgr} />
+            <RewardSection
+              setHeight={setRewardHeight}
+              x={spacing.md}
+              y={rewardOffsetY}
+              customFontMgr={customFontMgr}
+            />
           )}
         </Group>
-      </Canvas>
-    </AnimatedImageBackground >
+      </AnimatedCanvas>
+    </AnimatedImageBackground>
   )
 }
 
@@ -128,7 +170,11 @@ export const STREAK_CALC_HEIGHT = spacing.lg + 64 + spacing.xl
 export const CARD_WIDTH = width * 0.8
 export const CARD_HEIGHT = CARD_WIDTH * 1.5
 
+const CENTER_X = (width - CARD_WIDTH) / 2 + CARD_WIDTH / 2
+const CENTER_Y = (CARD_HEIGHT + spacing.xxl) / 2
+
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
+const AnimatedCanvas = Animated.createAnimatedComponent(Canvas)
 export const CardScene = React.memo(CardSceneComponent)
 
 export const $root: ViewStyle = {
@@ -148,11 +194,11 @@ const $cardEffects: ImageStyle = {
   backgroundColor: colors.background,
   borderRadius: cardRadius,
   justifyContent: "center",
-  position: 'relative'
+  position: "relative",
 }
 
 const $content: ViewStyle = {
-  position: 'absolute',
+  position: "absolute",
   width: CARD_WIDTH,
   left: (width - CARD_WIDTH) / 2,
 }

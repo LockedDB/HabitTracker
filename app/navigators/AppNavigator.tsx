@@ -33,7 +33,7 @@ export type AppStackParamList = {
   HabitCreation: undefined
   Home: undefined
   Playground: undefined
-	// IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
+  // IGNITE_GENERATOR_ANCHOR_APP_STACK_PARAM_LIST
 }
 
 /**
@@ -58,7 +58,7 @@ const AppStack = observer(function AppStack() {
       <Stack.Screen name="HabitCreation" component={Screens.HabitCreationScreen} />
       <Stack.Screen name="Home" component={Screens.HomeScreen} />
       <Stack.Screen name="Playground" component={Screens.PlaygroundScreen} />
-			{/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}
+      {/* IGNITE_GENERATOR_ANCHOR_APP_STACK_SCREENS */}
     </Stack.Navigator>
   )
 })

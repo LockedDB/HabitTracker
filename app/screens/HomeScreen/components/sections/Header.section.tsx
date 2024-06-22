@@ -12,7 +12,12 @@ type Props = {
   setHeight: (height: number) => void
 }
 
-function _HeaderSection({ customFontMgr, themeColor, habit: { name, description }, setHeight }: Props) {
+function _HeaderSection({
+  customFontMgr,
+  themeColor,
+  habit: { name, description },
+  setHeight,
+}: Props) {
   const titleFont = useFont(customFontsToLoad.PoetsenOne, titleSize)
 
   const paragraph = useMemo(() => {
@@ -47,6 +52,5 @@ function _HeaderSection({ customFontMgr, themeColor, habit: { name, description 
 }
 
 export const HeaderSection = withGroupTransform(React.memo(_HeaderSection))
-
 
 const titleSize = 24

@@ -47,5 +47,4 @@ function _RewardSection({ customFontMgr, setHeight }: Props) {
   )
 }
 
-
 export const RewardSection = withGroupTransform(React.memo(_RewardSection))
