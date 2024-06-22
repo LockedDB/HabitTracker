@@ -58,6 +58,7 @@ function CardSceneComponent(props: CardProps) {
             currentRotation.value = 0
           }
         })
+        rotateX.value = withTiming(0)
       } else {
         rotateX.value = withTiming(0)
         rotateY.value = withTiming(0)
