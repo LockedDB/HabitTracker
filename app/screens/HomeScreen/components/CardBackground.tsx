@@ -1,4 +1,4 @@
-import { BlendColor, Image, Mask, RoundedRect, Skia, useImage } from "@shopify/react-native-skia"
+import { Fill, Group, Image, RuntimeShader, Skia, useImage } from "@shopify/react-native-skia"
 import { Theme } from "app/models/Theme"
 import { colors } from "app/theme"
 import React from "react"
@@ -9,15 +9,28 @@ type Props = {
   backgroundImage: Theme["image"]
 }
 
+// Shader to transform all the pixels to its luminosity
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+const source = Skia.RuntimeEffect.Make(`
+uniform shader image;
+
+half4 main(float2 xy) {
+  half4 color = image.eval(xy);
+  half luminosity = dot(color.rgb, half3(0.299, 0.587, 0.114));
+  return half4(luminosity, luminosity, luminosity, color.a);
+}
+`)!;
+
+
 export function CardBackground({ backgroundImage }: Props) {
   const image = useImage(backgroundImage)
 
   return (
-    <Mask mode="alpha" mask={<RoundedRect rect={rrct} />}>
-      <Image image={image} width={width} height={height} fit="cover" opacity={0.05}>
-        <BlendColor color={colors.background} mode="darken" />
-      </Image>
-    </Mask>
+    <Group clip={rrct}>
+      <Fill color={colors.background} />
+      <Image image={image} width={width} height={height} fit="cover" opacity={0.1} />
+      <RuntimeShader source={source} />
+    </Group>
   )
 }
 
