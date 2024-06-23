@@ -1,4 +1,13 @@
-import { Fill, Group, Image, RuntimeShader, Skia, useImage } from "@shopify/react-native-skia"
+import {
+  Fill,
+  Group,
+  Image,
+  Paint,
+  RuntimeShader,
+  Shadow,
+  Skia,
+  useImage
+} from "@shopify/react-native-skia"
 import { Theme } from "app/models/Theme"
 import { colors } from "app/theme"
 import React from "react"
@@ -19,17 +28,23 @@ half4 main(float2 xy) {
   half luminosity = dot(color.rgb, half3(0.299, 0.587, 0.114));
   return half4(luminosity, luminosity, luminosity, color.a);
 }
-`)!;
-
+`)!
 
 export function CardBackground({ backgroundImage }: Props) {
   const image = useImage(backgroundImage)
 
   return (
-    <Group clip={rrct}>
+    <Group
+      clip={rrct}
+      layer={
+        <Paint>
+          <Shadow dx={0} dy={0} blur={4} color="rgba(0, 0, 0, 0.15)" />
+        </Paint>
+      }
+    >
+      <RuntimeShader source={source} />
       <Fill color={colors.background} />
       <Image image={image} width={width} height={height} fit="cover" opacity={0.1} />
-      <RuntimeShader source={source} />
     </Group>
   )
 }
