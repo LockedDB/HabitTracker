@@ -14,6 +14,7 @@ import Animated, {
 } from "react-native-reanimated"
 import { CardBackground } from "./CardBackground"
 import { cardRadius } from "./consts"
+import { AlarmSection, alarmSectionHeight } from "./sections/Alarms.section"
 import { HeaderSection } from "./sections/Header.section"
 import { RewardSection } from "./sections/Reward.section"
 import { StreakSection, streakSectionHeight } from "./sections/Streak.section"
@@ -103,6 +104,7 @@ function CardSceneComponent(props: CardProps) {
     () => streakOffsetY + streakSectionHeight + spacing.xs,
     [streakOffsetY],
   )
+  const alarmOffsetY = useMemo(() => item.reward ? rewardOffsetY + rewardHeight + spacing.xs : streakOffsetY + streakSectionHeight + spacing.xs, [rewardOffsetY, streakOffsetY, item.reward, rewardHeight])
 
   const $flippedStyle = useAnimatedStyle(() => ({
     opacity: isDisplayingBack.value ? 0 : 1,
@@ -111,11 +113,14 @@ function CardSceneComponent(props: CardProps) {
   useEffect(() => {
     if (headerHeight === 0) return
     const height =
-      + headerHeight
-      + streakSectionHeight
-      + rewardHeight
+      headerHeight +
+      streakSectionHeight +
+      rewardHeight +
+      alarmSectionHeight +
       // Spacing between sections
-      + spacing.xs + spacing.xs
+      spacing.xs +
+      spacing.xs +
+      spacing.xs
 
     setContentHeight(height)
   }, [headerHeight, rewardHeight])
@@ -177,6 +182,8 @@ function CardSceneComponent(props: CardProps) {
               customFontMgr={customFontMgr}
             />
           )}
+
+          <AlarmSection x={spacing.md} y={alarmOffsetY} />
         </Group>
       </AnimatedCanvas>
     </AnimatedImageBackground>
