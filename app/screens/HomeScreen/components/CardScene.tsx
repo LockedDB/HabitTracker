@@ -1,4 +1,4 @@
-import { Canvas, Group, processTransform3d, useFonts } from "@shopify/react-native-skia"
+import { Canvas, Group, Paint, processTransform3d, useFonts } from "@shopify/react-native-skia"
 import { Habit } from "app/models"
 import { Theme, themeData } from "app/models/Theme"
 import { colors, customFontsToLoad, spacing } from "app/theme"
@@ -6,11 +6,10 @@ import React, { useEffect, useMemo, useState } from "react"
 import { Dimensions, ImageBackground, ImageStyle, ViewStyle } from "react-native"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, {
-  useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
   withSpring,
-  withTiming,
+  withTiming
 } from "react-native-reanimated"
 import { CardBackground } from "./CardBackground"
 import { cardRadius } from "./consts"
@@ -19,7 +18,7 @@ import { HeaderSection } from "./sections/Header.section"
 import { RewardSection } from "./sections/Reward.section"
 import { StreakSection, streakSectionHeight } from "./sections/Streak.section"
 
-const { width, height } = Dimensions.get("window")
+const { width } = Dimensions.get("window")
 
 const { PoetsenOne, ...quicksandFonts } = customFontsToLoad
 const allFonts = {
@@ -75,6 +74,8 @@ function CardSceneComponent(props: CardProps) {
     return false
   })
 
+  const displayContent = useDerivedValue(() => isDisplayingBack.value ? 0 : 1)
+
   const rotationMatrix = useDerivedValue(() =>
     processTransform3d([
       { translate: [CENTER_X, CENTER_Y] },
@@ -87,16 +88,6 @@ function CardSceneComponent(props: CardProps) {
     ]),
   )
 
-  const contentRotation = useDerivedValue(() =>
-    processTransform3d([
-      { translate: [CARD_WIDTH / 2, contentHeight / 2] },
-      { perspective: 500 },
-      { rotateY: rotateY.value },
-      { rotateX: rotateX.value },
-      { translate: [-(CARD_WIDTH / 2), -contentHeight / 2] },
-    ]),
-  )
-
   const customFontMgr = useFonts(allFonts)
 
   const streakOffsetY = useMemo(() => headerHeight + spacing.xs, [headerHeight])
@@ -105,10 +96,6 @@ function CardSceneComponent(props: CardProps) {
     [streakOffsetY],
   )
   const alarmOffsetY = useMemo(() => item.reward ? rewardOffsetY + rewardHeight + spacing.xs : streakOffsetY + streakSectionHeight + spacing.xs, [rewardOffsetY, streakOffsetY, item.reward, rewardHeight])
-
-  const $flippedStyle = useAnimatedStyle(() => ({
-    opacity: isDisplayingBack.value ? 0 : 1,
-  }))
 
   useEffect(() => {
     if (headerHeight === 0) return
@@ -142,50 +129,38 @@ function CardSceneComponent(props: CardProps) {
         <Canvas style={$canvas}>
           <Group matrix={rotationMatrix}>
             <CardBackground backgroundImage={theme.image} />
+
+            <Group layer={<Paint opacity={displayContent} />} transform={[{ translate: [(width - CARD_WIDTH) / 2, (CARD_HEIGHT - contentHeight) / 2] }]}>
+              <HeaderSection
+                setHeight={setHeaderHeight}
+                x={spacing.md}
+                y={0}
+                customFontMgr={customFontMgr}
+                themeColor={theme.color}
+                habit={{ ...item }}
+              />
+
+              <StreakSection
+                x={spacing.md}
+                y={streakOffsetY}
+                themeColor={theme.color}
+                themeIcon={theme.icon}
+              />
+
+              {item.reward && (
+                <RewardSection
+                  setHeight={setRewardHeight}
+                  x={spacing.md}
+                  y={rewardOffsetY}
+                  customFontMgr={customFontMgr}
+                />
+              )}
+
+              <AlarmSection x={spacing.md} y={alarmOffsetY} />
+            </Group>
           </Group>
         </Canvas>
       </GestureDetector>
-
-      <AnimatedCanvas
-        pointerEvents="none"
-        style={[
-          $content,
-          $flippedStyle,
-          {
-            height: contentHeight,
-            top: (height - contentHeight) / 2,
-          },
-        ]}
-      >
-        <Group matrix={contentRotation}>
-          <HeaderSection
-            setHeight={setHeaderHeight}
-            x={spacing.md}
-            y={0}
-            customFontMgr={customFontMgr}
-            themeColor={theme.color}
-            habit={{ ...item }}
-          />
-
-          <StreakSection
-            x={spacing.md}
-            y={streakOffsetY}
-            themeColor={theme.color}
-            themeIcon={theme.icon}
-          />
-
-          {item.reward && (
-            <RewardSection
-              setHeight={setRewardHeight}
-              x={spacing.md}
-              y={rewardOffsetY}
-              customFontMgr={customFontMgr}
-            />
-          )}
-
-          <AlarmSection x={spacing.md} y={alarmOffsetY} />
-        </Group>
-      </AnimatedCanvas>
     </AnimatedImageBackground>
   )
 }
@@ -197,7 +172,6 @@ const CENTER_X = (width - CARD_WIDTH) / 2 + CARD_WIDTH / 2
 const CENTER_Y = (CARD_HEIGHT + spacing.xxl) / 2
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground)
-const AnimatedCanvas = Animated.createAnimatedComponent(Canvas)
 export const CardScene = React.memo(CardSceneComponent)
 
 export const $root: ViewStyle = {
@@ -218,10 +192,4 @@ const $cardEffects: ImageStyle = {
   borderRadius: cardRadius,
   justifyContent: "center",
   position: "relative",
-}
-
-const $content: ViewStyle = {
-  position: "absolute",
-  width: CARD_WIDTH,
-  left: (width - CARD_WIDTH) / 2,
 }
