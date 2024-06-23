@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated"
 import { $root, CardScene } from "./components/CardScene"
 
-interface HomeScreenProps extends AppStackScreenProps<"Home"> {}
+interface HomeScreenProps extends AppStackScreenProps<"Home"> { }
 
 export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions()
@@ -102,7 +102,7 @@ export const HomeScreen: FC<HomeScreenProps> = observer(function HomeScreen() {
         ref={listRef}
         data={data}
         contentOffset={{ x: screenWidth + SPACING_CARDS, y: 0 }}
-        renderItem={({ item }) => <CardScene item={item} />}
+        renderItem={({ item, index }) => <CardScene item={item} isVisible={currentTab.value === index} />}
         horizontal
         keyExtractor={(item) => item.id}
         scrollEventThrottle={16}

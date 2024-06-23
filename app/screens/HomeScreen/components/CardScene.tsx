@@ -28,10 +28,11 @@ const allFonts = {
 
 type CardProps = {
   item: Habit
+  isVisible: boolean
 }
 
 function CardSceneComponent(props: CardProps) {
-  const { item } = props
+  const { item, isVisible } = props
   const theme: Theme = themeData[item.theme]
   const [headerHeight, setHeaderHeight] = useState(0)
   const [rewardHeight, setRewardHeight] = useState(0)
@@ -109,6 +110,13 @@ function CardSceneComponent(props: CardProps) {
     if (headerHeight === 0) return
     setContentHeight(headerHeight + STREAK_CALC_HEIGHT + rewardHeight)
   }, [headerHeight, rewardHeight])
+
+  useEffect(() => {
+    if (isVisible) {
+      rotateY.value = 0
+      currentRotation.value = 0
+    }
+  }, [isVisible])
 
   return (
     <AnimatedImageBackground
