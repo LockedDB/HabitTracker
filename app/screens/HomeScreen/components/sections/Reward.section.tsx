@@ -10,7 +10,7 @@ type Props = {
 }
 
 function _RewardSection({ customFontMgr, setHeight }: Props) {
-  const titleFont = useFont(customFontsToLoad.quicksandBold, 16)
+  const titleFont = useFont(customFontsToLoad.quicksandBold, titleSize)
 
   const rewardParagraph = useMemo(() => {
     // Are the custom fonts loaded?
@@ -29,18 +29,18 @@ function _RewardSection({ customFontMgr, setHeight }: Props) {
 
     paragraphBuilder.layout(CARD_WIDTH - spacing.md * 2)
 
-    setHeight(paragraphBuilder.getHeight() + 16 + spacing.md)
+    setHeight(paragraphBuilder.getHeight() + titleSize + spacing.xs)
 
     return paragraphBuilder
   }, [customFontMgr])
 
   return (
     <>
-      <Text text="Reward" font={titleFont} x={0} />
+      <Text text="Reward" font={titleFont} y={titleSize} x={0} />
       <Paragraph
         paragraph={rewardParagraph}
         x={0}
-        y={spacing.md}
+        y={titleSize + spacing.xs}
         width={CARD_WIDTH - spacing.md * 2}
       />
     </>
@@ -48,3 +48,5 @@ function _RewardSection({ customFontMgr, setHeight }: Props) {
 }
 
 export const RewardSection = withGroupTransform(React.memo(_RewardSection))
+
+const titleSize = 16

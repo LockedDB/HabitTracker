@@ -6,7 +6,7 @@ import {
   RuntimeShader,
   Shadow,
   Skia,
-  useImage
+  useImage,
 } from "@shopify/react-native-skia"
 import { Theme } from "app/models/Theme"
 import { colors } from "app/theme"
@@ -44,12 +44,12 @@ export function CardBackground({ backgroundImage }: Props) {
     >
       <RuntimeShader source={source} />
       <Fill color={colors.background} />
-      <Image image={image} width={width} height={height} fit="cover" opacity={0.1} />
+      <Image image={image} width={360} height={CARD_HEIGHT} fit="fitWidth" opacity={0.07} />
     </Group>
   )
 }
 
-const { width, height } = Dimensions.get("window")
+const { width } = Dimensions.get("window")
 
 const rct = Skia.XYWHRect((width - CARD_WIDTH) / 2, 0, CARD_WIDTH, CARD_HEIGHT)
 const rrct = Skia.RRectXY(rct, 32, 32)

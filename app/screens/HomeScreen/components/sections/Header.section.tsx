@@ -36,21 +36,23 @@ function _HeaderSection({
       .build()
 
     // Call layout to calculate the height of the paragraph
-    paragraphBuilder.layout(CARD_WIDTH - spacing.md * 2)
+    paragraphBuilder.layout(paragraphMaxWidth)
 
-    setHeight(paragraphBuilder.getHeight() + titleSize + spacing.xs)
+    const height = titleSize + spacing.xs + paragraphBuilder.getHeight()
+    setHeight(height)
 
     return paragraphBuilder
-  }, [customFontMgr])
+  }, [customFontMgr, description, setHeight])
 
   return (
     <>
-      <Text font={titleFont} text={name} color={themeColor} />
-      <Paragraph paragraph={paragraph} x={0} y={spacing.sm} width={CARD_WIDTH - spacing.md * 2} />
+      <Text font={titleFont} text={name} y={titleSize} x={0} color={themeColor} />
+      <Paragraph paragraph={paragraph} x={0} y={titleSize + spacing.xs} width={paragraphMaxWidth} />
     </>
   )
 }
 
-export const HeaderSection = withGroupTransform(React.memo(_HeaderSection))
+export const HeaderSection = withGroupTransform(_HeaderSection)
 
 const titleSize = 24
+const paragraphMaxWidth = CARD_WIDTH - spacing.md * 2

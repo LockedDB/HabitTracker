@@ -16,7 +16,7 @@ import { CardBackground } from "./CardBackground"
 import { cardRadius } from "./consts"
 import { HeaderSection } from "./sections/Header.section"
 import { RewardSection } from "./sections/Reward.section"
-import { StreakSection } from "./sections/Streak.section"
+import { StreakSection, streakSectionHeight } from "./sections/Streak.section"
 
 const { width, height } = Dimensions.get("window")
 
@@ -74,7 +74,6 @@ function CardSceneComponent(props: CardProps) {
     return false
   })
 
-
   const rotationMatrix = useDerivedValue(() =>
     processTransform3d([
       { translate: [CENTER_X, CENTER_Y] },
@@ -99,8 +98,11 @@ function CardSceneComponent(props: CardProps) {
 
   const customFontMgr = useFonts(allFonts)
 
-  const streakOffsetY = useMemo(() => headerHeight + spacing.lg, [headerHeight])
-  const rewardOffsetY = useMemo(() => streakOffsetY + 24 + 16 + spacing.xxl, [streakOffsetY])
+  const streakOffsetY = useMemo(() => headerHeight + spacing.xs, [headerHeight])
+  const rewardOffsetY = useMemo(
+    () => streakOffsetY + streakSectionHeight + spacing.xs,
+    [streakOffsetY],
+  )
 
   const $flippedStyle = useAnimatedStyle(() => ({
     opacity: isDisplayingBack.value ? 0 : 1,
@@ -108,7 +110,14 @@ function CardSceneComponent(props: CardProps) {
 
   useEffect(() => {
     if (headerHeight === 0) return
-    setContentHeight(headerHeight + STREAK_CALC_HEIGHT + rewardHeight)
+    const height =
+      + headerHeight
+      + streakSectionHeight
+      + rewardHeight
+      // Spacing between sections
+      + spacing.xs + spacing.xs
+
+    setContentHeight(height)
   }, [headerHeight, rewardHeight])
 
   useEffect(() => {
@@ -147,7 +156,7 @@ function CardSceneComponent(props: CardProps) {
           <HeaderSection
             setHeight={setHeaderHeight}
             x={spacing.md}
-            y={spacing.lg}
+            y={0}
             customFontMgr={customFontMgr}
             themeColor={theme.color}
             habit={{ ...item }}
@@ -173,8 +182,6 @@ function CardSceneComponent(props: CardProps) {
     </AnimatedImageBackground>
   )
 }
-
-export const STREAK_CALC_HEIGHT = spacing.lg + 64 + spacing.xl
 
 export const CARD_WIDTH = width * 0.8
 export const CARD_HEIGHT = CARD_WIDTH * 1.5
